@@ -28,8 +28,7 @@ export default function Checkout() {
         <h1>Sign in to continue</h1>
         <p>You need an account to place an order.</p>
         <div className={styles.gateCta}>
-          <Link to="/login"    className="btn btn-primary">Sign in</Link>
-          <Link to="/register" className="btn btn-outline">Create account</Link>
+          <Link to="/auth" className="btn btn-primary">Sign up / Login</Link>
         </div>
       </main>
     )

@@ -51,8 +51,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" className={`btn btn-sm ${styles.btnLogin}`}>Log in</Link>
-              <Link to="/register" className={`btn btn-sm ${styles.btnRegister}`}>Register</Link>
+              <Link to="/auth" className={`btn btn-sm ${styles.btnRegister}`}>Sign up / Login</Link>
             </>
           )}
 
@@ -90,8 +89,7 @@ export default function Navbar() {
           {user
             ? <button onClick={handleLogout}>Sign out</button>
             : <>
-                <Link to="/login" onClick={() => setMobileOpen(false)}>Log in</Link>
-                <Link to="/register" onClick={() => setMobileOpen(false)}>Register</Link>
+                <Link to="/auth" onClick={() => setMobileOpen(false)}>Sign up / Login</Link>
               </>}
         </div>
       )}

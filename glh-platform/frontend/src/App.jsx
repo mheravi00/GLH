@@ -6,10 +6,13 @@ import { useAuth }   from './context/useAuth'
 import Home          from './pages/public/Home'
 import Catalogue     from './pages/public/Catalogue'
 import ProductDetail from './pages/public/ProductDetail'
+import AuthGateway   from './pages/public/AuthGateway'
 import Login         from './pages/public/Login'
 import Register      from './pages/public/Register'
 import RegisterProducer from './pages/public/RegisterProducer'
 import Producers     from './pages/public/Producers'
+import LocallyGrown  from './pages/public/LocallyGrown'
+import FullyTraceable from './pages/public/FullyTraceable'
 
 import MyOrders      from './pages/customer/MyOrders'
 import Checkout      from './pages/customer/Checkout'
@@ -20,7 +23,7 @@ import AdminPanel    from './pages/admin/AdminPanel'
 
 function RequireAuth({ children, role }) {
   const { user, isAuth } = useAuth()
-  if (!isAuth) return <Navigate to="/login" replace />
+  if (!isAuth) return <Navigate to="/auth" replace />
   if (role && user?.role !== role) return <Navigate to="/" replace />
   return children
 }
@@ -34,10 +37,13 @@ export default function App() {
         <Route path="/"            element={<Home />} />
         <Route path="/catalogue"   element={<Catalogue />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/auth"               element={<AuthGateway />} />
         <Route path="/login"              element={<Login />} />
         <Route path="/register"           element={<Register />} />
         <Route path="/register/producer"  element={<RegisterProducer />} />
         <Route path="/producers"          element={<Producers />} />
+        <Route path="/feature/locally-grown" element={<LocallyGrown />} />
+        <Route path="/feature/fully-traceable" element={<FullyTraceable />} />
         <Route path="/checkout"    element={<Checkout />} />
         <Route path="/order-confirmation/:ref" element={<OrderConfirmation />} />
         <Route path="/orders"      element={<RequireAuth><MyOrders /></RequireAuth>} />

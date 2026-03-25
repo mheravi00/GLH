@@ -1,6 +1,10 @@
 /* ── Hero ── */
 .hero {
-  background: var(--clr-primary);
+  background-color: var(--clr-primary);
+  background-image: url('https://unsplash.com/photos/eE-ffApg7oI/download?force=true&w=1920');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: var(--sp-16) 0 calc(var(--sp-16) * 1.25);
   text-align: center;
 }
@@ -15,13 +19,13 @@
 .hero h1 {
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   line-height: 1.25;
-  color: var(--clr-white);
+  color: #fff;
   font-weight: 700;
 }
 
 .heroSub {
   font-size: var(--text-sm);
-  color: rgba(255, 255, 255, 0.85);
+  color: #fff;
   max-width: 460px;
 }
 
@@ -92,8 +96,11 @@
   grid-template-columns: 1fr;
   gap: var(--sp-6);
   padding: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  justify-items: center;
 }
-@media (min-width: 600px) { .featureGrid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 600px) { .featureGrid { grid-template-columns: repeat(2, minmax(280px, 1fr)); } }
 
 .featureCard {
   display: flex;
@@ -107,6 +114,32 @@
   text-align: center;
 }
 
+.featureCardImage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: center;
+}
+
+.featureImageLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition-fast);
+}
+
+.featureImageLink:hover {
+  transform: translateY(-4px);
+}
+
 .featureIcon {
   font-size: 2rem;
   color: var(--clr-primary);
@@ -115,8 +148,19 @@
   justify-content: center;
 }
 
+.featureImage {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
 .featureCard h3 { font-size: var(--text-body); font-weight: 700; }
 .featureCard p  { font-size: var(--text-xs); color: var(--clr-neutral-500); }
+
+.featureCardImage h3 { font-size: var(--text-lg); font-weight: 700; color: var(--clr-neutral-900); }
+.featureCardImage p  { font-size: var(--text-sm); color: var(--clr-neutral-600); }
 
 /* ── Producers ── */
 .producers {

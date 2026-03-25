@@ -1,22 +1,18 @@
 import { Link } from 'react-router-dom'
-import { Leaf, Search, CheckSquare } from 'lucide-react'
 import styles from './Home.module.css'
 
 const FEATURES = [
   {
-    icon: <Leaf size={28} aria-hidden="true" />,
+    key: 'locally-grown',
+    image: 'https://unsplash.com/photos/r0ZrCr7ZVl0/download?force=true&w=800',
     title: 'Locally Grown',
     text: 'All produce comes from farms within 50 miles of your door.',
   },
   {
-    icon: <Search size={28} aria-hidden="true" />,
+    key: 'fully-traceable',
+    image: 'https://images.pexels.com/photos/4483941/pexels-photo-4483941.jpeg',
     title: 'Fully Traceable',
     text: 'Every product carries a batch number so you know its journey.',
-  },
-  {
-    icon: <CheckSquare size={28} aria-hidden="true" />,
-    title: 'Always Fresh',
-    text: 'Orders are packed to order — no warehouse sitting around.',
   },
 ]
 
@@ -62,10 +58,12 @@ export default function Home() {
         <div className="container">
           <ul className={styles.featureGrid} role="list">
             {FEATURES.map(f => (
-              <li key={f.title} className={styles.featureCard}>
-                <div className={styles.featureIcon}>{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
+              <li key={f.title} className={styles.featureCardImage}>
+                <Link to={`/feature/${f.key}`} className={styles.featureImageLink}>
+                  <img className={styles.featureImage} src={f.image} alt={f.title} />
+                  <h3>{f.title}</h3>
+                  <p>{f.text}</p>
+                </Link>
               </li>
             ))}
           </ul>
