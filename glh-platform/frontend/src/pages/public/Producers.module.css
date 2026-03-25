@@ -1,0 +1,124 @@
+.page { padding: var(--sp-8) 0 var(--sp-16); }
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-6);
+}
+.pageHeader h1 { margin-bottom: var(--sp-2); }
+.pageHeader p  { font-size: var(--text-sm); color: var(--clr-neutral-500); max-width: 560px; }
+
+/* Search */
+.searchWrap {
+  position: relative;
+  max-width: 480px;
+  margin-bottom: var(--sp-3);
+}
+.searchIcon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--clr-neutral-500);
+  pointer-events: none;
+}
+.searchInput { padding-left: 36px !important; }
+
+.count {
+  font-size: var(--text-xs);
+  color: var(--clr-neutral-500);
+  margin-bottom: var(--sp-6);
+}
+
+/* Grid */
+.grid {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-6);
+}
+@media (min-width: 600px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Card */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  background: var(--clr-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.producerName {
+  font-size: var(--text-body);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bio {
+  font-size: var(--text-xs);
+  color: var(--clr-neutral-500);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  color: var(--clr-neutral-500);
+}
+
+.shopBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Empty state */
+.empty {
+  padding: var(--sp-16);
+  text-align: center;
+  color: var(--clr-neutral-500);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.emptyIcon { font-size: 3rem; }
