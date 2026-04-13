@@ -4,19 +4,22 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider }   from './context/AuthContext'
 import { BasketProvider } from './context/BasketContext'
 import { ToastProvider }  from './context/ToastContext'
+import { ThemeProvider }  from './context/ThemeContext'
 import './index.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <BasketProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </BasketProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BasketProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </BasketProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>
 )

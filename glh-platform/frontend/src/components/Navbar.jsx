@@ -1,13 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingBasket, Menu, X, Leaf } from 'lucide-react'
+import { ShoppingBasket, Menu, X, Leaf, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/useAuth'
 import { useBasket } from '../context/useBasket'
+import { useTheme } from '../context/useTheme'
 import styles from './Navbar.module.css'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { count, setOpen } = useBasket()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -43,6 +45,14 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className={styles.actions}>
+          <button
+            className={styles.themeToggle}
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            {theme === 'light' ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
+          </button>
+
           {user ? (
             <>
               <Link to={dashLink} className={`btn btn-sm ${styles.btnRegister}`}>
