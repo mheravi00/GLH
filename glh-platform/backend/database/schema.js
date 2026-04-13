@@ -1,6 +1,7 @@
 const db = require('./db')
 
-db.exec(`
+async function init() {
+  await db.execAsync(`
   CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
@@ -85,10 +86,7 @@ db.exec(`
   );
 `)
 
-console.log('Database tables created successfully')
-```
+  console.log('Database tables created successfully')
+}
 
----
-
-
-node database/schema.js
+init().catch(console.error)

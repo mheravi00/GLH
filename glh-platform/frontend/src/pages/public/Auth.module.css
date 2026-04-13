@@ -1,0 +1,78 @@
+.page {
+  min-height: calc(100vh - var(--navbar-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-8) var(--sp-4);
+  background: linear-gradient(160deg, var(--clr-primary-light), var(--clr-surface));
+}
+
+.card {
+  background: var(--clr-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--sp-8) var(--sp-8);
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  animation: scaleIn var(--transition-fast) ease;
+}
+
+.logo {
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+.card h1 {
+  text-align: center;
+  font-size: var(--text-h2);
+}
+
+.sub {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--clr-neutral-500);
+  margin-top: calc(-1 * var(--sp-2));
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.alert {
+  background: var(--clr-error-light);
+  color: var(--clr-error);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.footer {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--clr-neutral-500);
+}
+.footer a { color: var(--clr-primary-dark); font-weight: 600; }
+
+.cardWide { max-width: 560px; }
+
+.sectionLabel {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--clr-neutral-500);
+  padding-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--clr-neutral-100);
+}
