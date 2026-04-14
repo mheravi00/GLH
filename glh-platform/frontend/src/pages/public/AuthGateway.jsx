@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { UserRound, Tractor } from 'lucide-react'
+import { UserRound, Tractor, Shield } from 'lucide-react'
 import styles from './AuthGateway.module.css'
 
 const OPTIONS = [
@@ -21,6 +21,16 @@ const OPTIONS = [
     actions: [
       { label: 'Producer Login', to: '/login', variant: 'primary' },
       { label: 'Producer Sign up', to: '/register/producer', variant: 'outline' },
+    ],
+  },
+  {
+    key: 'admin',
+    title: 'Administrator',
+    icon: <Shield size={20} aria-hidden="true" />,
+    description: 'Access administrative tools and manage the platform.',
+    actions: [
+      { label: 'Admin Login', to: '/login', variant: 'primary' },
+      { label: 'Admin Sign up', to: '/register/admin', variant: 'outline' },
     ],
   },
 ]

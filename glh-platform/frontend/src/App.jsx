@@ -10,6 +10,7 @@ import AuthGateway   from './pages/public/AuthGateway'
 import Login         from './pages/public/Login'
 import Register      from './pages/public/Register'
 import RegisterProducer from './pages/public/RegisterProducer'
+import RegisterAdmin from './pages/public/RegisterAdmin'
 import Producers     from './pages/public/Producers'
 import LocallyGrown  from './pages/public/LocallyGrown'
 import FullyTraceable from './pages/public/FullyTraceable'
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/login"              element={<Login />} />
         <Route path="/register"           element={<Register />} />
         <Route path="/register/producer"  element={<RegisterProducer />} />
+        <Route path="/register/admin"     element={<RegisterAdmin />} />
         <Route path="/producers"          element={<Producers />} />
         <Route path="/feature/locally-grown" element={<LocallyGrown />} />
         <Route path="/feature/fully-traceable" element={<FullyTraceable />} />
@@ -51,7 +53,7 @@ export default function App() {
         <Route path="/account"     element={<RequireAuth><AccountSettings /></RequireAuth>} />
         <Route path="/orders"      element={<RequireAuth><MyOrders /></RequireAuth>} />
         <Route path="/producer"    element={<RequireAuth role="producer"><ProducerDashboard /></RequireAuth>} />
-        <Route path="/admin"       element={<RequireAuth><AdminPanel /></RequireAuth>} />
+        <Route path="/admin"       element={<RequireAuth role="admin"><AdminPanel /></RequireAuth>} />
         <Route path="/about"       element={<About />} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>

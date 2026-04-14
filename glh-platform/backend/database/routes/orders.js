@@ -261,7 +261,7 @@ router.patch('/producer/:orderId/status', requireAuth, requireRole('producer'), 
   }
 })
 
-router.get('/admin/all', async (_req, res) => {
+router.get('/admin/all', requireAuth, requireRole('admin'), async (_req, res) => {
   try {
     const orders = await db.allAsync(
       `SELECT o.order_id, o.order_ref, o.status, o.order_type, o.subtotal,

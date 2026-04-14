@@ -1,22 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useBasket } from '../../context/useBasket'
 import { useAuth }   from '../../context/useAuth'
 import { useToast }  from '../../context/useToast'
+import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 import api from '../../utils/api'
-import { Check } from 'lucide-react'
+import { Check, CreditCard } from 'lucide-react'
 import styles from './Checkout.module.css'
 
-const STEPS = ['Your details', 'Review & pay']
+const STEPS = ['Your details', 'Payment', 'Confirmation']
 
 export default function Checkout() {
   const { items, subtotal, clearBasket } = useBasket()
   const { isAuth, user } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
+  const stripe = useStripe()
+  const elements = useElements()
+
   const [step, setStep] = useState(0)
   const [details, setDetails] = useState({ order_type: 'collection', notes: '' })
+  const [clientSecret, setClientSecret] = useState('')
   const [loading, setLoading] = useState(false)
+  const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
 
   const DELIVERY_FEE = details.order_type === 'delivery' ? 3.50 : 0
@@ -43,9 +49,57 @@ export default function Checkout() {
     )
   }
 
-  async function handlePlaceOrder() {
+  useEffect(() => {
+    if (step === 1 && !clientSecret) {
+      createPaymentIntent()
+    }
+  }, [step, clientSecret])
+
+  async function createPaymentIntent() {
+    try {
+      const res = await api.post('/create-payment-intent', { amount: total })
+      setClientSecret(res.data.clientSecret)
+    } catch (err) {
+      setError('Failed to initialize payment. Please try again.')
+    }
+  }
+
+  async function handlePayment() {
+    if (!stripe || !elements) return
+
+    setProcessing(true)
     setError('')
-    setLoading(true)
+
+    const { error: submitError } = await elements.submit()
+    if (submitError) {
+      setError(submitError.message)
+      setProcessing(false)
+      return
+    }
+
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/order-confirmation`,
+        },
+        redirect: 'if_required',
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        // Payment succeeded, create order
+        await createOrder()
+      }
+    } catch (err) {
+      setError('Payment failed. Please try again.')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  async function createOrder() {
     try {
       const orderPayload = {
         items: items.map(i => ({
@@ -67,8 +121,6 @@ export default function Checkout() {
       const msg = err.response?.data?.error || 'Could not place order. Please try again.'
       setError(msg)
       addToast(msg, 'error')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -98,105 +150,133 @@ export default function Checkout() {
         <div className={styles.layout}>
           <div className={styles.main}>
             {step === 0 && (
-              <section aria-labelledby="step1-heading">
-                <h2 id="step1-heading">Your details</h2>
+              <section aria-labelledby="details-heading">
+                <h2 id="details-heading" className="sr-only">Order Details</h2>
 
-                <div className={styles.formSection}>
-                  <p className={styles.greeting}>Hi {user?.name} — confirm your order type:</p>
-
-                  <fieldset className={styles.radioGroup}>
-                    <legend className="form-label">Order type</legend>
-                    {['collection', 'delivery'].map(type => (
-                      <label key={type} className={styles.radioLabel}>
-                        <input
-                          type="radio"
-                          name="order_type"
-                          value={type}
-                          checked={details.order_type === type}
-                          onChange={() => setDetails(d => ({ ...d, order_type: type }))}
-                        />
-                        <span>
-                          {type === 'collection' ? '🏪 Click & collect (free)' : `🚚 Home delivery (+£3.50)`}
-                        </span>
-                      </label>
-                    ))}
-                  </fieldset>
-
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="notes">Order notes (optional)</label>
-                    <textarea
-                      id="notes"
-                      className="form-input"
-                      rows={3}
-                      value={details.notes}
-                      onChange={e => setDetails(d => ({ ...d, notes: e.target.value }))}
-                      placeholder="Any special requests or delivery instructions…"
-                      style={{ resize: 'vertical' }}
-                    />
+                <div className={styles.section}>
+                  <h3>Order Type</h3>
+                  <div className={styles.radioGroup}>
+                    <label className={styles.radio}>
+                      <input
+                        type="radio"
+                        name="order_type"
+                        value="collection"
+                        checked={details.order_type === 'collection'}
+                        onChange={e => setDetails(d => ({ ...d, order_type: e.target.value }))}
+                      />
+                      <span>Collection</span>
+                    </label>
+                    <label className={styles.radio}>
+                      <input
+                        type="radio"
+                        name="order_type"
+                        value="delivery"
+                        checked={details.order_type === 'delivery'}
+                        onChange={e => setDetails(d => ({ ...d, order_type: e.target.value }))}
+                      />
+                      <span>Delivery (+£3.50)</span>
+                    </label>
                   </div>
+                </div>
 
-                  <button className="btn btn-primary btn-lg" onClick={() => setStep(1)} style={{ alignSelf:'flex-start' }}>
-                    Continue to review →
+                <div className={styles.section}>
+                  <h3>Order Summary</h3>
+                  <div className={styles.summary}>
+                    {items.map(item => (
+                      <div key={item.product_id} className={styles.summaryItem}>
+                        <span>{item.name} × {item.quantity}</span>
+                        <span>£{(item.unit_price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div className={styles.summaryItem}>
+                      <span>Subtotal</span>
+                      <span>£{subtotal.toFixed(2)}</span>
+                    </div>
+                    {DELIVERY_FEE > 0 && (
+                      <div className={styles.summaryItem}>
+                        <span>Delivery</span>
+                        <span>£{DELIVERY_FEE.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className={`${styles.summaryItem} ${styles.total}`}>
+                      <span>Total</span>
+                      <span>£{total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.actions}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setStep(1)}
+                  >
+                    Continue to Payment
                   </button>
                 </div>
               </section>
             )}
 
             {step === 1 && (
-              <section aria-labelledby="step2-heading">
-                <h2 id="step2-heading">Review your order</h2>
+              <section aria-labelledby="payment-heading">
+                <h2 id="payment-heading" className="sr-only">Payment Details</h2>
 
-                {error && <div style={{padding:'1rem',background:'#fee',border:'1px solid #fcc',borderRadius:'var(--radius-md)',marginBottom:'1rem',color:'#c00'}}>{error}</div>}
+                {error && <div className={styles.alert}>{error}</div>}
 
-                <ul className={styles.itemList} aria-label="Order items">
-                  {items.map(item => (
-                    <li key={item.product_id} className={styles.orderItem}>
-                      <span className={styles.itemName}>{item.name}</span>
-                      <span className={styles.itemQty}>× {item.quantity}</span>
-                      <span className={styles.itemTotal}>£{(item.unit_price * item.quantity).toFixed(2)}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  className="btn btn-primary btn-lg"
-                  onClick={handlePlaceOrder}
-                  disabled={loading}
-                  style={{ width: '100%', marginTop: 'var(--sp-4)' }}
-                >
-                  {loading ? 'Placing order…' : 'Place order'}
-                </button>
-
-                <button className="btn btn-ghost btn-sm" onClick={() => setStep(0)} style={{ marginTop:'var(--sp-2)' }}>
-                  ← Back
-                </button>
+                <div className={styles.section}>
+                  <h3><CreditCard size={20} /> Payment Information</h3>
+                  {clientSecret ? (
+                    <form onSubmit={e => { e.preventDefault(); handlePayment() }}>
+                      <PaymentElement />
+                      <div className={styles.actions}>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={() => setStep(0)}
+                        >
+                          Back
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          disabled={!stripe || processing}
+                        >
+                          {processing ? 'Processing…' : `Pay £${total.toFixed(2)}`}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className={styles.loading}>Initializing payment…</div>
+                  )}
+                </div>
               </section>
             )}
           </div>
 
-          <aside className={styles.summary} aria-label="Order summary">
-            <h2>Order summary</h2>
-            <ul className={styles.summaryList}>
-              {items.map(item => (
-                <li key={item.product_id} className={styles.summaryItem}>
-                  <span>{item.name} ×{item.quantity}</span>
-                  <span>£{(item.unit_price * item.quantity).toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
-            <hr className="divider" />
-            <div className={styles.summaryRow}>
-              <span>Subtotal</span>
-              <span>£{subtotal.toFixed(2)}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Delivery</span>
-              <span>{DELIVERY_FEE > 0 ? `£${DELIVERY_FEE.toFixed(2)}` : 'Free'}</span>
-            </div>
-            <hr className="divider" />
-            <div className={`${styles.summaryRow} ${styles.total}`}>
-              <span>Total</span>
-              <span>£{total.toFixed(2)}</span>
+          <aside className={styles.sidebar}>
+            <div className={styles.orderSummary}>
+              <h3>Your Order</h3>
+              <div className={styles.summary}>
+                {items.map(item => (
+                  <div key={item.product_id} className={styles.summaryItem}>
+                    <span>{item.name} × {item.quantity}</span>
+                    <span>£{(item.unit_price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className={styles.summaryItem}>
+                  <span>Subtotal</span>
+                  <span>£{subtotal.toFixed(2)}</span>
+                </div>
+                {DELIVERY_FEE > 0 && (
+                  <div className={styles.summaryItem}>
+                    <span>Delivery</span>
+                    <span>£{DELIVERY_FEE.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className={`${styles.summaryItem} ${styles.total}`}>
+                  <span>Total</span>
+                  <span>£{total.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
           </aside>
         </div>

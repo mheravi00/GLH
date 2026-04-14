@@ -101,6 +101,19 @@ async function init() {
   await ensureColumn('producers', 'contact_email', 'TEXT')
   await ensureColumn('producers', 'contact_phone', 'TEXT')
 
+  // Seed default admin account
+  const adminExists = await db.getAsync('SELECT user_id FROM users WHERE email = ?', ['admin@glh.local'])
+  if (!adminExists) {
+    const bcrypt = require('bcryptjs')
+    const passwordHash = await bcrypt.hash('Admin123!', 12)
+    await db.runAsync(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role)
+       VALUES (?, ?, ?, ?, ?)`,
+      ['admin@glh.local', passwordHash, 'System', 'Administrator', 'admin']
+    )
+    console.log('Default admin account created: admin@glh.local / Admin123!')
+  }
+
   console.log('Database tables created successfully')
 }
 

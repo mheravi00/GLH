@@ -2,7 +2,7 @@ const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const db = require('../db')
-const { requireAuth } = require('../middleware/auth')
+const { requireAuth, requireRole } = require('../middleware/auth')
 
 const JWT_SECRET = process.env.JWT_SECRET || 'glh-local-dev-secret'
 
@@ -32,6 +32,10 @@ function validatePassword(password) {
   }
   if (!/[0-9]/.test(password)) {
     return 'Password must include a number'
+  }
+  // Reject suspicious SQL/script patterns
+  if (/['";\\()[\]{}*?+|&^%$#@!~`]/.test(password.slice(0, 3))) {
+    return 'Password cannot start with special characters'
   }
   return null
 }
@@ -365,7 +369,95 @@ router.delete('/me', requireAuth, async (req, res) => {
   }
 })
 
-router.get('/manage/accounts', async (_req, res) => {
+router.post('/manage/accounts', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    let {
+      email,
+      password,
+      first_name,
+      last_name,
+      phone_number,
+      role,
+      farm_name,
+      description,
+      location,
+      contact_email,
+      contact_phone,
+    } = req.body
+
+    email = normalizeEmail(email)
+    password = password?.toString()
+    first_name = normalizeText(first_name)
+    last_name = normalizeText(last_name)
+    phone_number = normalizePhone(phone_number)
+    farm_name = normalizeText(farm_name)
+    description = normalizeText(description)
+    location = normalizeText(location)
+    contact_email = normalizeEmail(contact_email)
+    contact_phone = normalizePhone(contact_phone)
+
+    if (!email || !password || !first_name || !last_name) {
+      return res.status(400).json({ error: 'All fields are required' })
+    }
+    if (first_name.length > 50 || last_name.length > 50 || email.length > 100) {
+      return res.status(400).json({ error: 'Input too long' })
+    }
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' })
+    }
+    if (phone_number && !phoneRegex.test(phone_number)) {
+      return res.status(400).json({ error: 'Invalid phone number format' })
+    }
+
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError })
+    }
+
+    const assignedRole = ['customer', 'producer', 'admin'].includes(role) ? role : 'customer'
+    if (assignedRole === 'producer' && !farm_name) {
+      return res.status(400).json({ error: 'Farm name is required for producer accounts' })
+    }
+    if (assignedRole === 'producer' && farm_name.length > 100) {
+      return res.status(400).json({ error: 'Farm name too long' })
+    }
+    if (contact_email && !emailRegex.test(contact_email)) {
+      return res.status(400).json({ error: 'Invalid producer contact email format' })
+    }
+    if (contact_phone && !phoneRegex.test(contact_phone)) {
+      return res.status(400).json({ error: 'Invalid producer contact phone format' })
+    }
+
+    const existing = await db.getAsync('SELECT user_id FROM users WHERE email = ?', [email])
+    if (existing) {
+      return res.status(400).json({ error: 'An account already exists with this email' })
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12)
+    const result = await db.runAsync(
+      `INSERT INTO users (email, password_hash, first_name, last_name, phone_number, role)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [email, passwordHash, first_name, last_name, phone_number, assignedRole]
+    )
+
+    const userId = result.lastInsertRowid
+
+    if (assignedRole === 'producer') {
+      await db.runAsync(
+        `INSERT INTO producers (user_id, farm_name, description, location, contact_email, contact_phone)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, farm_name, description || '', location || '', contact_email || email, contact_phone || phone_number]
+      )
+    }
+
+    res.status(201).json({ message: 'Account created successfully' })
+  } catch (err) {
+    console.error('POST /manage/accounts error:', err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.get('/manage/accounts', requireAuth, requireRole('admin'), async (_req, res) => {
   try {
     const rows = await db.allAsync(
       `SELECT u.user_id, u.email, u.first_name, u.last_name, u.phone_number, u.role, u.is_active, u.created_at,
@@ -381,7 +473,7 @@ router.get('/manage/accounts', async (_req, res) => {
   }
 })
 
-router.patch('/manage/accounts/:id/status', async (req, res) => {
+router.patch('/manage/accounts/:id/status', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const userId = Number(req.params.id)
     const isActive = Number(req.body.is_active)
@@ -396,7 +488,7 @@ router.patch('/manage/accounts/:id/status', async (req, res) => {
   }
 })
 
-router.patch('/manage/accounts/:id', async (req, res) => {
+router.patch('/manage/accounts/:id', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const userId = Number(req.params.id)
     if (!Number.isInteger(userId)) {
@@ -464,7 +556,7 @@ router.patch('/manage/accounts/:id', async (req, res) => {
   }
 })
 
-router.patch('/manage/accounts/:id/password', async (req, res) => {
+router.patch('/manage/accounts/:id/password', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const userId = Number(req.params.id)
     const newPassword = req.body.new_password?.toString()
@@ -486,7 +578,7 @@ router.patch('/manage/accounts/:id/password', async (req, res) => {
   }
 })
 
-router.delete('/manage/accounts/:id', async (req, res) => {
+router.delete('/manage/accounts/:id', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const userId = Number(req.params.id)
     if (!Number.isInteger(userId)) {

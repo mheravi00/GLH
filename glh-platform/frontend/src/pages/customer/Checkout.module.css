@@ -104,3 +104,47 @@
 .summaryItem { display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--clr-neutral-700); }
 .summaryRow  { display: flex; justify-content: space-between; font-size: var(--text-sm); }
 .total { font-weight: 800; font-size: var(--text-body); }
+
+.sidebar { position: sticky; top: calc(var(--navbar-h) + var(--sp-4)); }
+
+.orderSummary {
+  background: var(--clr-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-6);
+}
+
+.orderSummary h3 { font-size: var(--text-h3); margin-bottom: var(--sp-4); }
+
+.section { margin-bottom: var(--sp-6); }
+.section h3 { font-size: var(--text-lg); margin-bottom: var(--sp-4); display: flex; align-items: center; gap: var(--sp-2); }
+
+.radioGroup { display: flex; flex-direction: column; gap: var(--sp-2); }
+.radio {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1.5px solid var(--clr-neutral-300);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border var(--transition-fast), background var(--transition-fast);
+}
+.radio:has(input:checked) { border-color: var(--clr-primary); background: var(--clr-primary-light); }
+.radio input { accent-color: var(--clr-primary); }
+
+.summary {
+  background: var(--clr-neutral-50);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.summaryItem { display: flex; justify-content: space-between; font-size: var(--text-sm); }
+.total { font-weight: 700; font-size: var(--text-base); border-top: 1px solid var(--clr-neutral-200); padding-top: var(--sp-2); margin-top: var(--sp-2); }
+
+.actions { display: flex; gap: var(--sp-3); justify-content: flex-end; margin-top: var(--sp-6); }
+
+.alert { background: var(--clr-error-light); border: 1px solid var(--clr-error); border-radius: var(--radius-md); padding: var(--sp-3) var(--sp-4); color: var(--clr-error-dark); margin-bottom: var(--sp-4); }
+
+.loading { text-align: center; padding: var(--sp-8); color: var(--clr-neutral-500); }

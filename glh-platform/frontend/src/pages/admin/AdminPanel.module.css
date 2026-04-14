@@ -75,6 +75,43 @@
   margin-bottom: var(--sp-4);
 }
 
+/* ── Edit form ── */
+.editForm {
+  background: var(--clr-neutral-50);
+  border: 1px solid var(--clr-neutral-200);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.editForm h3 {
+  margin: 0 0 var(--sp-4) 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.formRow {
+  display: flex;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.formGroup {
+  flex: 1;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: var(--sp-1);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: flex-end;
+  margin-top: var(--sp-4);
+}
+
 .tableWrap { overflow-x: auto; margin-bottom: var(--sp-6); }
 
 .table {

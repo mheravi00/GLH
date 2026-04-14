@@ -13,6 +13,7 @@ const ROLE_BADGE = {
 }
 
 const EMPTY_EDIT = { user_id: null, first_name: '', last_name: '', email: '', role: 'customer' }
+const EMPTY_CREATE = { first_name: '', last_name: '', email: '', password: '', role: 'customer', phone_number: '', farm_name: '', description: '', location: '', contact_email: '', contact_phone: '' }
 
 export default function AdminPanel() {
   const [tab, setTab] = useState('Overview')
@@ -25,6 +26,8 @@ export default function AdminPanel() {
   const [error, setError] = useState('')
   const [editUser, setEditUser] = useState(null)
   const [editSaving, setEditSaving] = useState(false)
+  const [createUser, setCreateUser] = useState(null)
+  const [createSaving, setCreateSaving] = useState(false)
   const { addToast } = useToast()
 
   useEffect(() => {
@@ -128,6 +131,23 @@ export default function AdminPanel() {
     }
   }
 
+  async function saveCreate(e) {
+    e.preventDefault()
+    setCreateSaving(true)
+    try {
+      await api.post('/auth/manage/accounts', createUser)
+      addToast('Account created')
+      setCreateUser(null)
+      // Refresh users list
+      const usersRes = await api.get('/auth/manage/accounts')
+      setUsers(Array.isArray(usersRes.data) ? usersRes.data : [])
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Could not create user', 'error')
+    } finally {
+      setCreateSaving(false)
+    }
+  }
+
   async function runTraceabilitySearch(e) {
     e.preventDefault()
     setLoadingTrace(true)
@@ -184,7 +204,153 @@ export default function AdminPanel() {
           <section aria-labelledby="users-heading">
             <div className={styles.sectionHeader}>
               <h2 id="users-heading">All Users</h2>
+              <button className="btn btn-primary" onClick={() => setCreateUser({ ...EMPTY_CREATE })}>
+                Create Account
+              </button>
             </div>
+
+            {createUser && (
+              <div className={styles.editForm}>
+                <h3>Create New Account</h3>
+                <form onSubmit={saveCreate}>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label className="form-label" htmlFor="create-first-name">First Name *</label>
+                      <input
+                        id="create-first-name"
+                        className="form-input"
+                        value={createUser.first_name}
+                        onChange={e => setCreateUser(c => ({ ...c, first_name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className="form-label" htmlFor="create-last-name">Last Name *</label>
+                      <input
+                        id="create-last-name"
+                        className="form-input"
+                        value={createUser.last_name}
+                        onChange={e => setCreateUser(c => ({ ...c, last_name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label className="form-label" htmlFor="create-email">Email *</label>
+                      <input
+                        id="create-email"
+                        type="email"
+                        className="form-input"
+                        value={createUser.email}
+                        onChange={e => setCreateUser(c => ({ ...c, email: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className="form-label" htmlFor="create-password">Password *</label>
+                      <input
+                        id="create-password"
+                        type="password"
+                        className="form-input"
+                        value={createUser.password}
+                        onChange={e => setCreateUser(c => ({ ...c, password: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label className="form-label" htmlFor="create-role">Role</label>
+                      <select
+                        id="create-role"
+                        className="form-input"
+                        value={createUser.role}
+                        onChange={e => setCreateUser(c => ({ ...c, role: e.target.value }))}
+                      >
+                        <option value="customer">Customer</option>
+                        <option value="producer">Producer</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className="form-label" htmlFor="create-phone">Phone</label>
+                      <input
+                        id="create-phone"
+                        className="form-input"
+                        value={createUser.phone_number}
+                        onChange={e => setCreateUser(c => ({ ...c, phone_number: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  {createUser.role === 'producer' && (
+                    <>
+                      <div className={styles.formRow}>
+                        <div className={styles.formGroup}>
+                          <label className="form-label" htmlFor="create-farm-name">Farm Name *</label>
+                          <input
+                            id="create-farm-name"
+                            className="form-input"
+                            value={createUser.farm_name}
+                            onChange={e => setCreateUser(c => ({ ...c, farm_name: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label className="form-label" htmlFor="create-location">Location</label>
+                          <input
+                            id="create-location"
+                            className="form-input"
+                            value={createUser.location}
+                            onChange={e => setCreateUser(c => ({ ...c, location: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label className="form-label" htmlFor="create-description">Description</label>
+                        <textarea
+                          id="create-description"
+                          className="form-input"
+                          value={createUser.description}
+                          onChange={e => setCreateUser(c => ({ ...c, description: e.target.value }))}
+                          rows={3}
+                        />
+                      </div>
+                      <div className={styles.formRow}>
+                        <div className={styles.formGroup}>
+                          <label className="form-label" htmlFor="create-contact-email">Contact Email</label>
+                          <input
+                            id="create-contact-email"
+                            type="email"
+                            className="form-input"
+                            value={createUser.contact_email}
+                            onChange={e => setCreateUser(c => ({ ...c, contact_email: e.target.value }))}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label className="form-label" htmlFor="create-contact-phone">Contact Phone</label>
+                          <input
+                            id="create-contact-phone"
+                            className="form-input"
+                            value={createUser.contact_phone}
+                            onChange={e => setCreateUser(c => ({ ...c, contact_phone: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  <div className={styles.formActions}>
+                    <button type="submit" className="btn btn-primary" disabled={createSaving}>
+                      {createSaving ? 'Creating…' : 'Create Account'}
+                    </button>
+                    <button type="button" className="btn btn-outline" onClick={() => setCreateUser(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             <div className={styles.tableWrap}>
               <table aria-label="Users" className={styles.table}>
                 <thead>

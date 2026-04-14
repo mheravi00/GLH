@@ -21,6 +21,8 @@ export default function Navbar() {
 
   const dashLink = user?.role === 'producer'
     ? '/producer'
+    : user?.role === 'admin'
+    ? '/admin'
     : '/orders'
 
   return (
