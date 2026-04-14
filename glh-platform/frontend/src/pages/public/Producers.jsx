@@ -72,7 +72,6 @@ export default function Producers() {
   return (
     <main className={styles.page}>
       <div className="container">
-        {/* Page header */}
         <div className={styles.pageHeader}>
           <div>
             <h1>Our Producers</h1>
@@ -83,7 +82,6 @@ export default function Producers() {
           </Link>
         </div>
 
-        {/* Search */}
         <div className={styles.searchWrap}>
           <Search size={16} className={styles.searchIcon} aria-hidden="true" />
           <input
@@ -96,12 +94,10 @@ export default function Producers() {
           />
         </div>
 
-        {/* Count */}
         <p className={styles.count}>
           {filtered.length} producer{filtered.length !== 1 ? 's' : ''}
         </p>
 
-        {/* Grid */}
         {filtered.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🌾</span>
@@ -121,10 +117,19 @@ export default function Producers() {
                 <p className={styles.bio}>{p.description || 'Local producer committed to quality'}</p>
 
                 <div className={styles.cardFooter}>
-                  <span className={styles.location}>
-                    <MapPin size={13} aria-hidden="true" />
-                    {p.location || 'Local area'}
-                  </span>
+                  <div>
+                    <span className={styles.location}>
+                      <MapPin size={13} aria-hidden="true" />
+                      {p.location || 'Local area'}
+                    </span>
+                    {(p.contact_email || p.contact_phone) && (
+                      <p className={styles.contactInfo}>
+                        {p.contact_email || 'No public email'}
+                        {p.contact_email && p.contact_phone ? ' · ' : ''}
+                        {p.contact_phone || ''}
+                      </p>
+                    )}
+                  </div>
                   <Link
                     to={`/catalogue?producer=${encodeURIComponent(p.farm_name)}`}
                     className={`btn btn-outline btn-sm ${styles.shopBtn}`}

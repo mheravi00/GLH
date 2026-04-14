@@ -6,12 +6,10 @@ export default function FullyTraceable() {
   return (
     <main className={styles.page}>
       <div className="container">
-        {/* Back link */}
         <Link to="/" className={styles.backLink}>
           <ArrowLeft size={16} aria-hidden="true" /> Back to home
         </Link>
 
-        {/* Hero image */}
         <div className={styles.heroImage}>
           <img 
             src="https://images.pexels.com/photos/4483941/pexels-photo-4483941.jpeg" 
@@ -19,7 +17,6 @@ export default function FullyTraceable() {
           />
         </div>
 
-        {/* Content */}
         <article className={styles.content}>
           <h1>Fully Traceable</h1>
           <p className={styles.subtitle}>
@@ -50,7 +47,6 @@ export default function FullyTraceable() {
             <h2>Comments & Explanations</h2>
             <div className={styles.commentsBox}>
               <p className={styles.placeholder}>Add your detailed explanations, insights, or additional information here.</p>
-              {/* Add comment form here if needed */}
             </div>
           </section>
         </article>

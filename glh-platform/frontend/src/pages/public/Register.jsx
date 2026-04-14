@@ -6,7 +6,7 @@ import api from '../../utils/api'
 import styles from './Auth.module.css'
 
 export default function Register() {
-  const [form, setForm]   = useState({ first_name:'', last_name:'', email:'', password:'' })
+  const [form, setForm]   = useState({ first_name:'', last_name:'', email:'', phone_number:'', password:'' })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const { login }    = useAuth()
@@ -39,7 +39,7 @@ export default function Register() {
       const loginRes = await api.post('/auth/login', { email: form.email, password: form.password })
       login(loginRes.data.token, loginRes.data.name)
       addToast('Account created — welcome to the hub!')
-      navigate('/')
+      navigate('/account')
     } catch (err) {
       const submitError = err.response?.data?.error
         || (err.request ? 'Cannot reach server. Start the backend on port 5000 and try again.' : 'Registration failed. Please try again.')
@@ -81,6 +81,7 @@ export default function Register() {
             {field('last_name',  'Last name',  'text', 'family-name')}
           </div>
           {field('email',    'Email address', 'email',    'email')}
+          {field('phone_number', 'Phone number', 'tel', 'tel')}
           {field('password', 'Password',      'password', 'new-password')}
 
           <button type="submit" className="btn btn-primary btn-lg" style={{ width:'100%' }} disabled={loading}>

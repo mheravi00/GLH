@@ -7,8 +7,8 @@ import styles from './Auth.module.css'
 
 export default function RegisterProducer() {
   const [form, setForm] = useState({
-    first_name: '', last_name: '', email: '', password: '',
-    farm_name: '', location: '', description: '',
+    first_name: '', last_name: '', email: '', phone_number: '', password: '',
+    farm_name: '', location: '', description: '', contact_email: '', contact_phone: '',
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
@@ -89,11 +89,16 @@ export default function RegisterProducer() {
             {field('last_name',  'Last name',  'text', 'family-name')}
           </div>
           {field('email',    'Email address', 'email',    'email')}
+          {field('phone_number', 'Phone number', 'tel', 'tel')}
           {field('password', 'Password',      'password', 'new-password')}
 
           <p className={styles.sectionLabel}>Your farm / business</p>
           {field('farm_name',   'Farm or business name', 'text', 'organization', 'e.g. Meadow Farm')}
           {field('location',    'Location',              'text', 'address-level2', 'e.g. Shropshire')}
+          <div className={styles.row}>
+            {field('contact_email', 'Public contact email', 'email', 'email', 'Optional')}
+            {field('contact_phone', 'Public contact phone', 'tel', 'tel', 'Optional')}
+          </div>
 
           <div className="form-group">
             <label className="form-label" htmlFor="description">Short description <span style={{fontWeight:400,textTransform:'none'}}>(optional)</span></label>

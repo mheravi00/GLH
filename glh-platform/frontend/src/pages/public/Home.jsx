@@ -26,7 +26,6 @@ const PRODUCERS = [
 export default function Home() {
   return (
     <main>
-      {/* Hero */}
       <section className={styles.hero} aria-labelledby="hero-heading">
         <div className={`container ${styles.heroInner}`}>
           <h1 id="hero-heading">
@@ -53,7 +52,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
       <section className={styles.features} aria-labelledby="features-heading">
         <div className="container">
           <ul className={styles.featureGrid} role="list">
@@ -70,7 +68,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Meet Our Producers */}
       <section className={styles.producers} aria-labelledby="producers-heading">
         <div className="container">
           <h2 id="producers-heading" className={styles.sectionTitle}>Meet Our Producers</h2>

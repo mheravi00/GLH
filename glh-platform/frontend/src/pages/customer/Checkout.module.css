@@ -10,7 +10,6 @@
 
 .title { margin-bottom: var(--sp-6); }
 
-/* Stepper */
 .stepper {
   display: flex;
   align-items: center;

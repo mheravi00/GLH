@@ -77,7 +77,6 @@ export default function Checkout() {
       <div className="container">
         <h1 className={styles.title}>Checkout</h1>
 
-        {/* Stepper */}
         <nav aria-label="Checkout steps" className={styles.stepper}>
           {STEPS.map((label, i) => (
             <div key={label} className={styles.stepItem}>
@@ -97,7 +96,6 @@ export default function Checkout() {
         </nav>
 
         <div className={styles.layout}>
-          {/* Left panel */}
           <div className={styles.main}>
             {step === 0 && (
               <section aria-labelledby="step1-heading">
@@ -176,7 +174,6 @@ export default function Checkout() {
             )}
           </div>
 
-          {/* Order summary sidebar */}
           <aside className={styles.summary} aria-label="Order summary">
             <h2>Order summary</h2>
             <ul className={styles.summaryList}>

@@ -22,7 +22,7 @@ export default function Login() {
       login(res.data.token, res.data.name)
       addToast(`Welcome back, ${res.data.name}!`)
       const role = res.data.role
-      navigate(role === 'admin' ? '/admin' : role === 'producer' ? '/producer' : '/')
+      navigate(role === 'producer' ? '/producer' : '/account')
     } catch (err) {
       setError(err.response?.data?.error || 'Sign in failed. Please try again.')
     } finally {

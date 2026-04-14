@@ -7,6 +7,7 @@ const STATUS_BADGE = {
   placed:     'badge badge-grey',
   confirmed:  'badge badge-green',
   ready:      'badge badge-amber',
+  collected:  'badge badge-green',
   delivered:  'badge badge-green',
   cancelled:  'badge badge-red',
 }
@@ -92,8 +93,8 @@ export default function MyOrders() {
                       {order.items && order.items.length > 0 ? (
                         order.items.map((item, i) => (
                           <li key={i} className={styles.item}>
-                            <span>{item.product_snapshot || item.name || 'Product'}</span>
-                            <span className={styles.itemDetail}>×{item.quantity} · £{(item.unit_price * item.quantity).toFixed(2)}</span>
+                            <span>{item.name || 'Product'}</span>
+                            <span className={styles.itemDetail}>×{item.quantity} · £{Number(item.line_total || item.unit_price * item.quantity).toFixed(2)}</span>
                           </li>
                         ))
                       ) : (

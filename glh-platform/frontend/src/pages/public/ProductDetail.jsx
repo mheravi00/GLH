@@ -71,14 +71,12 @@ export default function ProductDetail() {
         </nav>
 
         <div className={styles.layout}>
-          {/* Image */}
           <div className={styles.imgWrap}>
             {product.image_url
               ? <img src={product.image_url} alt={product.name} />
               : <div className={styles.placeholder} aria-hidden="true">🌿</div>}
           </div>
 
-          {/* Info */}
           <div className={styles.info}>
             <span className={styles.category}>{product.category_name}</span>
             <h1>{product.name}</h1>
@@ -89,7 +87,6 @@ export default function ProductDetail() {
               <span className={styles.unit}> / {product.unit}</span>
             </p>
 
-            {/* Stock */}
             <div className={styles.stockRow}>
               {!inStock && <span className="badge badge-red"><Package size={12} aria-hidden="true" /> Out of stock</span>}
               {lowStock  && <span className="badge badge-amber"><Package size={12} aria-hidden="true" /> Only {product.stock_quantity} left</span>}
@@ -98,7 +95,6 @@ export default function ProductDetail() {
 
             <p className={styles.desc}>{product.description}</p>
 
-            {/* Allergens */}
             {product.allergens?.length > 0 && (
               <div className={styles.allergenBox} role="region" aria-label="Allergen information">
                 <AlertCircle size={16} aria-hidden="true" className={styles.allergenIcon} />
@@ -113,7 +109,6 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Add to basket */}
             {inStock && (
               <div className={styles.addRow}>
                 <div className={styles.qtyControl} role="group" aria-label="Quantity">
@@ -137,7 +132,6 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Product details */}
             <details className={styles.details}>
               <summary>Ingredients &amp; batch info</summary>
               <dl className={styles.dl}>

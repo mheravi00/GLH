@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken')
 
+const JWT_SECRET = process.env.JWT_SECRET || 'glh-local-dev-secret'
+
 function requireAuth(req, res, next) {
   const header = req.headers.authorization
   if (!header?.startsWith('Bearer ')) {
@@ -7,7 +9,7 @@ function requireAuth(req, res, next) {
   }
   const token = header.slice(7)
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET)
+    req.user = jwt.verify(token, JWT_SECRET)
     next()
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' })

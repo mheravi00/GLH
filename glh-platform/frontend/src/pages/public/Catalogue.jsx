@@ -198,7 +198,6 @@ export default function Catalogue() {
           <aside className={styles.sidebar} aria-label="Product filters">{sidebar}</aside>
 
           <div className={styles.main}>
-            {/* Search + sort */}
             <div className={styles.topRow}>
               <input
                 type="search"
@@ -223,7 +222,6 @@ export default function Catalogue() {
               </button>
             </div>
 
-            {/* Active chips */}
             {chips.length > 0 && (
               <div className={styles.chipRow} role="list" aria-label="Active filters">
                 {chips.map(chip => (
@@ -264,7 +262,6 @@ export default function Catalogue() {
               </ul>
             ) : null}
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <nav className={styles.pagination} aria-label="Page navigation">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (

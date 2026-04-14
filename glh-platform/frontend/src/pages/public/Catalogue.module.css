@@ -1,6 +1,5 @@
 .page { padding: var(--sp-8) 0 var(--sp-16); }
 
-/* ── Layout ── */
 .layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -10,7 +9,6 @@
   .layout { grid-template-columns: 220px 1fr; align-items: start; }
 }
 
-/* ── Sidebar ── */
 .sidebar { display: none; }
 @media (min-width: 900px) {
   .sidebar {
@@ -24,7 +22,6 @@
   }
 }
 
-/* ── Filter panel ── */
 .filterPanel  { display: flex; flex-direction: column; gap: var(--sp-5); }
 .filterSection{ display: flex; flex-direction: column; gap: var(--sp-2); border-bottom: 1px solid var(--clr-neutral-100); padding-bottom: var(--sp-4); }
 .filterSection:last-of-type { border-bottom: none; padding-bottom: 0; }
@@ -83,10 +80,8 @@
 }
 .clearAll:hover { opacity: .75; }
 
-/* ── Main area ── */
 .main { display: flex; flex-direction: column; gap: var(--sp-3); }
 
-/* Search + sort row */
 .topRow {
   display: flex;
   gap: var(--sp-3);
@@ -110,7 +105,6 @@
 .mobileFilterBtn { display: flex; }
 @media (min-width: 900px) { .mobileFilterBtn { display: none; } }
 
-/* Chips */
 .chipRow { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .chip {
   display: inline-flex;
@@ -134,10 +128,8 @@
 }
 .chipRemove:hover { background: rgba(0,0,0,.1); }
 
-/* Count */
 .count { font-size: var(--text-xs); color: var(--clr-neutral-500); }
 
-/* Grid */
 .grid {
   list-style: none;
   padding: 0;
@@ -148,7 +140,6 @@
 @media (min-width: 480px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 
-/* Empty */
 .empty {
   padding: var(--sp-16);
   text-align: center;
@@ -160,7 +151,6 @@
 }
 .emptyIcon { font-size: 3rem; }
 
-/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
@@ -188,7 +178,6 @@
   color: var(--clr-white) !important;
 }
 
-/* Mobile filter sheet */
 .filterSheet {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -231,7 +220,6 @@
 .filterToggle { display: flex; }
 @media (min-width: 900px) { .filterToggle { display: none; } }
 
-/* Layout */
 .layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -244,7 +232,6 @@
 .sidebar { display: none; }
 @media (min-width: 900px) { .sidebar { display: block; position: sticky; top: calc(var(--navbar-h) + var(--sp-4)); } }
 
-/* Grid */
 .grid {
   list-style: none;
   display: grid;
@@ -265,7 +252,6 @@
   gap: var(--sp-4);
 }
 
-/* Filter panel */
 .filterPanel {
   display: flex;
   flex-direction: column;
@@ -306,7 +292,6 @@
 
 .chipWrap { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 
-/* Filter sheet (mobile) */
 .filterSheet {
   position: fixed;
   bottom: 0; left: 0; right: 0;

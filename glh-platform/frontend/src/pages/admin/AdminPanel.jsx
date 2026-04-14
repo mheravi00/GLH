@@ -1,38 +1,155 @@
-import { useState } from 'react'
-import { Users, ShoppingBag, Package, TrendingUp } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Users, ShoppingBag, Package, Search, Pencil, Trash2 } from 'lucide-react'
+import api from '../../utils/api'
+import { useToast } from '../../context/useToast'
 import styles from './AdminPanel.module.css'
 
-const TABS = ['Overview', 'Users', 'Orders', 'Products']
-
-const STATS = [
-  { label:'Total users',    value:142, icon:<Users      size={20} aria-hidden="true" /> },
-  { label:'All-time orders',value:389, icon:<ShoppingBag size={20} aria-hidden="true"/>},
-  { label:'Products listed',value:34,  icon:<Package    size={20} aria-hidden="true" /> },
-  { label:'Revenue (month)',value:'£4,820', icon:<TrendingUp size={20} aria-hidden="true"/>},
-]
-
-const USERS = [
-  { user_id:1, name:'Anna Green',   email:'anna@test.com',   role:'customer', is_active:1, created_at:'2026-01-10' },
-  { user_id:2, name:'Ben Farm',     email:'ben@farm.com',    role:'producer', is_active:1, created_at:'2026-01-12' },
-  { user_id:3, name:'Carol Jones',  email:'carol@test.com',  role:'customer', is_active:0, created_at:'2026-02-01' },
-  { user_id:4, name:'Dave Producer',email:'dave@local.com',  role:'producer', is_active:1, created_at:'2026-02-14' },
-]
+const TABS = ['Overview', 'Users', 'Traceability']
 
 const ROLE_BADGE = {
   customer: 'badge badge-grey',
   producer: 'badge badge-green',
-  admin:    'badge badge-amber',
+  admin: 'badge badge-amber',
 }
+
+const EMPTY_EDIT = { user_id: null, first_name: '', last_name: '', email: '', role: 'customer' }
 
 export default function AdminPanel() {
   const [tab, setTab] = useState('Overview')
+  const [users, setUsers] = useState([])
+  const [orders, setOrders] = useState([])
+  const [batchNumber, setBatchNumber] = useState('')
+  const [traceability, setTraceability] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingTrace, setLoadingTrace] = useState(false)
+  const [error, setError] = useState('')
+  const [editUser, setEditUser] = useState(null)
+  const [editSaving, setEditSaving] = useState(false)
+  const { addToast } = useToast()
+
+  useEffect(() => {
+    let active = true
+
+    Promise.all([api.get('/auth/manage/accounts'), api.get('/orders/admin/all')])
+      .then(([usersRes, ordersRes]) => {
+        if (!active) return
+        setUsers(Array.isArray(usersRes.data) ? usersRes.data : [])
+        setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : [])
+        setError('')
+      })
+      .catch((err) => {
+        if (!active) return
+        const message = err.response?.data?.error || 'Could not load admin data. Check admin credentials.'
+        setError(message)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => { active = false }
+  }, [])
+
+  const stats = useMemo(() => {
+    const producerCount = users.filter(u => u.role === 'producer').length
+    const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
+
+    return [
+      { label: 'Total users', value: users.length, icon: <Users size={20} aria-hidden="true" /> },
+      { label: 'All-time orders', value: orders.length, icon: <ShoppingBag size={20} aria-hidden="true" /> },
+      { label: 'Producers', value: producerCount, icon: <Package size={20} aria-hidden="true" /> },
+      { label: 'Revenue', value: `£${totalRevenue.toFixed(2)}`, icon: <ShoppingBag size={20} aria-hidden="true" /> },
+    ]
+  }, [users, orders])
+
+  async function toggleUserStatus(userId, currentValue) {
+    try {
+      const next = currentValue ? 0 : 1
+      await api.patch(`/auth/manage/accounts/${userId}/status`, { is_active: next })
+      setUsers(prev => prev.map(u => (u.user_id === userId ? { ...u, is_active: next } : u)))
+      addToast(next ? 'Account reactivated' : 'Account suspended')
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Could not update user status', 'error')
+    }
+  }
+
+  async function deleteUser(userId, name) {
+    if (!window.confirm(`Delete account for ${name}? This cannot be undone.`)) return
+    try {
+      await api.delete(`/auth/manage/accounts/${userId}`)
+      setUsers(prev => prev.filter(u => u.user_id !== userId))
+      addToast('Account deleted')
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Could not delete user', 'error')
+    }
+  }
+
+  function openEdit(u) {
+    setEditUser({
+      user_id: u.user_id,
+      first_name: u.first_name,
+      last_name: u.last_name,
+      email: u.email,
+      phone_number: u.phone_number || '',
+      role: u.role,
+      farm_name: u.producer?.farm_name || '',
+      description: u.producer?.description || '',
+      location: u.producer?.location || '',
+      contact_email: u.producer?.contact_email || '',
+      contact_phone: u.producer?.contact_phone || '',
+    })
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault()
+    setEditSaving(true)
+    try {
+      await api.patch(`/auth/manage/accounts/${editUser.user_id}`, {
+        first_name: editUser.first_name,
+        last_name: editUser.last_name,
+        email: editUser.email,
+        phone_number: editUser.phone_number,
+        farm_name: editUser.farm_name,
+        description: editUser.description,
+        location: editUser.location,
+        contact_email: editUser.contact_email,
+        contact_phone: editUser.contact_phone,
+      })
+      setUsers(prev => prev.map(u =>
+        u.user_id === editUser.user_id
+          ? { ...u, ...editUser, name: `${editUser.first_name} ${editUser.last_name}`.trim() }
+          : u
+      ))
+      addToast('Account updated')
+      setEditUser(null)
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Could not update user', 'error')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  async function runTraceabilitySearch(e) {
+    e.preventDefault()
+    setLoadingTrace(true)
+    try {
+      const res = await api.get('/orders/admin/traceability', { params: { batch: batchNumber.trim() } })
+      setTraceability(res.data)
+      setError('')
+    } catch (err) {
+      setTraceability(null)
+      setError(err.response?.data?.error || 'Traceability search failed')
+    } finally {
+      setLoadingTrace(false)
+    }
+  }
 
   return (
     <main className={styles.page}>
       <div className="container">
         <h1 className={styles.title}>Admin Panel</h1>
 
-        {/* Tabs */}
+        {error && <div className={styles.infoBox}>{error}</div>}
+
         <div className={styles.tabs} role="tablist" aria-label="Admin sections">
           {TABS.map(t => (
             <button
@@ -47,27 +164,22 @@ export default function AdminPanel() {
           ))}
         </div>
 
-        {/* Overview */}
         {tab === 'Overview' && (
           <section aria-label="Overview">
             <ul className={styles.statsGrid} role="list">
-              {STATS.map(s => (
+              {stats.map(s => (
                 <li key={s.label} className={styles.statCard}>
                   <div className={styles.statIcon}>{s.icon}</div>
                   <div>
-                    <p className={styles.statValue}>{s.value}</p>
+                    <p className={styles.statValue}>{loading ? '…' : s.value}</p>
                     <p className={styles.statLabel}>{s.label}</p>
                   </div>
                 </li>
               ))}
             </ul>
-            <div className={styles.infoBox}>
-              <p>Full analytics charts will appear here once connected to the orders API.</p>
-            </div>
           </section>
         )}
 
-        {/* Users */}
         {tab === 'Users' && (
           <section aria-labelledby="users-heading">
             <div className={styles.sectionHeader}>
@@ -86,7 +198,11 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {USERS.map(u => (
+                  {!loading && users.length === 0 && (
+                    <tr><td colSpan={6} className={styles.tdBold}>No users found.</td></tr>
+                  )}
+
+                  {users.map(u => (
                     <tr key={u.user_id}>
                       <td className={styles.tdBold}>{u.name}</td>
                       <td>{u.email}</td>
@@ -97,10 +213,29 @@ export default function AdminPanel() {
                           : <span className="badge badge-red">Suspended</span>}
                       </td>
                       <td>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
-                      <td>
-                        <button className="btn btn-ghost btn-sm">
+                      <td className={styles.actionCell}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Edit account"
+                          onClick={() => openEdit(u)}
+                        >
+                          <Pencil size={14} aria-hidden="true" /> Edit
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => toggleUserStatus(u.user_id, u.is_active)}
+                        >
                           {u.is_active ? 'Suspend' : 'Reactivate'}
                         </button>
+                        {u.role !== 'admin' && (
+                          <button
+                            className={`btn btn-ghost btn-sm ${styles.btnDanger}`}
+                            title="Delete account"
+                            onClick={() => deleteUser(u.user_id, u.name)}
+                          >
+                            <Trash2 size={14} aria-hidden="true" /> Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -110,22 +245,130 @@ export default function AdminPanel() {
           </section>
         )}
 
-        {tab === 'Orders' && (
-          <section>
-            <div className={styles.infoBox}>
-              <p>Order management will be available once the orders API route is configured.</p>
+        {tab === 'Traceability' && (
+          <section aria-labelledby="trace-heading">
+            <div className={styles.sectionHeader}>
+              <h2 id="trace-heading">Batch Traceability</h2>
             </div>
-          </section>
-        )}
 
-        {tab === 'Products' && (
-          <section>
-            <div className={styles.infoBox}>
-              <p>Product moderation panel — approve, flag, or remove listings.</p>
-            </div>
+            <form className={styles.traceForm} onSubmit={runTraceabilitySearch}>
+              <label htmlFor="batch-input" className="form-label">Batch number</label>
+              <div className={styles.traceRow}>
+                <input
+                  id="batch-input"
+                  className="form-input"
+                  value={batchNumber}
+                  onChange={(e) => setBatchNumber(e.target.value)}
+                  placeholder="e.g. BT-001"
+                  required
+                />
+                <button className="btn btn-primary btn-sm" type="submit" disabled={loadingTrace}>
+                  <Search size={15} aria-hidden="true" />
+                  {loadingTrace ? 'Searching…' : 'Run search'}
+                </button>
+              </div>
+            </form>
+
+            {traceability && (
+              <div className={styles.traceResults}>
+                <h3>Products in batch {traceability.batch}</h3>
+                <div className={styles.tableWrap}>
+                  <table className={styles.table} aria-label="Batch products">
+                    <thead>
+                      <tr>
+                        <th scope="col">Product</th>
+                        <th scope="col">Producer</th>
+                        <th scope="col">Stock</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {traceability.products.length === 0 && (
+                        <tr><td colSpan={3}>No products found for this batch.</td></tr>
+                      )}
+                      {traceability.products.map(product => (
+                        <tr key={product.product_id}>
+                          <td>{product.name}</td>
+                          <td>{product.producer_name}</td>
+                          <td>{product.stock_quantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <h3 className={styles.traceOrdersTitle}>Affected orders</h3>
+                <div className={styles.tableWrap}>
+                  <table className={styles.table} aria-label="Affected orders">
+                    <thead>
+                      <tr>
+                        <th scope="col">Order ref</th>
+                        <th scope="col">Customer</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {traceability.orders.length === 0 && (
+                        <tr><td colSpan={4}>No linked orders found.</td></tr>
+                      )}
+                      {traceability.orders.map(order => (
+                        <tr key={`${order.order_id}-${order.product_id}`}>
+                          <td>{order.order_ref}</td>
+                          <td>{order.customer_name}</td>
+                          <td>{order.status}</td>
+                          <td>{new Date(order.created_at).toLocaleDateString('en-GB')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </section>
         )}
       </div>
+
+      {editUser && (
+        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+          <div className={styles.modal}>
+            <h2 id="edit-modal-title" className={styles.modalTitle}>Edit Account</h2>
+            <form onSubmit={saveEdit} className={styles.editForm}>
+              <div className={styles.formRow}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit-fname">First name</label>
+                  <input id="edit-fname" className="form-input" required value={editUser.first_name}
+                    onChange={e => setEditUser(p => ({ ...p, first_name: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit-lname">Last name</label>
+                  <input id="edit-lname" className="form-input" required value={editUser.last_name}
+                    onChange={e => setEditUser(p => ({ ...p, last_name: e.target.value }))} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="edit-email">Email</label>
+                <input id="edit-email" type="email" className="form-input" required value={editUser.email}
+                  onChange={e => setEditUser(p => ({ ...p, email: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="edit-role">Role</label>
+                <select id="edit-role" className="form-input" value={editUser.role}
+                  onChange={e => setEditUser(p => ({ ...p, role: e.target.value }))}>
+                  <option value="customer">Customer</option>
+                  <option value="producer">Producer</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className={styles.modalActions}>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditUser(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={editSaving}>
+                  {editSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

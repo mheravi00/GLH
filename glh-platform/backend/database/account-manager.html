@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLH Backend Account Manager</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f1e8;
+      --panel: #ffffff;
+      --ink: #17231b;
+      --muted: #5f6c62;
+      --line: #d8ded4;
+      --accent: #2f6b3b;
+      --accent-2: #d9e8d4;
+      --danger: #b42318;
+      --warning: #8a5b00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #f7f3eb 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 32px 20px 56px; }
+    .hero { margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; font-size: 2rem; }
+    p { color: var(--muted); }
+    .toolbar, .editor {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 14px 36px rgba(23, 35, 27, 0.08);
+    }
+    .toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .toolbar input { flex: 1; }
+    input, textarea, select, button {
+      font: inherit;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+    }
+    input, textarea, select { width: 100%; background: #fff; }
+    button { cursor: pointer; background: var(--accent); color: #fff; border: none; }
+    button.secondary { background: #edf3ea; color: var(--accent); border: 1px solid #cfe0c9; }
+    button.warn { background: #fff7e6; color: var(--warning); border: 1px solid #f0d9a6; }
+    button.danger { background: #fff1f1; color: var(--danger); border: 1px solid #efc1c1; }
+    .layout { display: grid; grid-template-columns: 1.4fr .9fr; gap: 18px; }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 18px; overflow: hidden; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #e9f1e5; font-size: 0.82rem; text-transform: uppercase; letter-spacing: .04em; }
+    tr:hover td { background: #fbfdf9; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+    .chip.customer { background: #eef2f7; color: #344054; }
+    .chip.producer { background: #e7f5eb; color: #1f6a38; }
+    .chip.active { background: #e8f7ec; color: #0f7a34; }
+    .chip.inactive { background: #fff1f1; color: #b42318; }
+    .cell-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .editor h2 { margin-top: 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stack { display: grid; gap: 12px; }
+    .notice { margin-top: 10px; color: var(--muted); }
+    .hidden { display: none; }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Backend Account Manager</h1>
+      <p>Open this page from the backend at <strong>/backend-tools/account-manager.html</strong> to inspect, edit, disable, reset, or delete any account directly from the backend tools screen.</p>
+    </section>
+
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search by name, email, farm, phone, or location">
+      <button id="refresh" class="secondary" type="button">Refresh</button>
+    </div>
+
+    <div class="layout">
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Producer Details</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <aside class="editor">
+        <h2>Edit Account</h2>
+        <form id="edit-form" class="stack">
+          <div class="grid">
+            <label>First name<input id="first_name" required></label>
+            <label>Last name<input id="last_name" required></label>
+          </div>
+          <div class="grid">
+            <label>Email<input id="email" type="email" required></label>
+            <label>Phone<input id="phone_number"></label>
+          </div>
+          <div class="grid">
+            <label>Role<input id="role" readonly></label>
+            <label>Created<input id="created_at" readonly></label>
+          </div>
+          <div id="producer-fields" class="stack hidden">
+            <div class="grid">
+              <label>Brand / farm name<input id="farm_name"></label>
+              <label>Location<input id="location"></label>
+            </div>
+            <div class="grid">
+              <label>Public contact email<input id="contact_email" type="email"></label>
+              <label>Public contact phone<input id="contact_phone"></label>
+            </div>
+            <label>Description<textarea id="description" rows="4"></textarea></label>
+          </div>
+          <div class="cell-actions">
+            <button type="submit">Save changes</button>
+            <button type="button" id="toggle-status" class="warn">Disable</button>
+            <button type="button" id="reset-password" class="secondary">Reset password</button>
+            <button type="button" id="delete-account" class="danger">Delete account</button>
+          </div>
+          <p id="status" class="notice">Select an account to edit it.</p>
+        </form>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // Derive API base — try same-origin first, fall back to port 5000
+    // Build list of API base URLs to try (same-origin first, then cross-origin port 5000)
+    const API_URLS = (() => {
+      const o = window.location.origin
+      const urls = []
+      // Always try same-origin first (works when opened from port 5000)
+      urls.push('')
+      // If not on port 5000, also try the backend port
+      if (!o.includes(':5000')) {
+        if (o.includes('.app.github.dev')) {
+          urls.push(o.replace(/-\d+\.app\.github\.dev/, '-5000.app.github.dev'))
+        } else {
+          urls.push(o.replace(/:\d+$/, ':5000'))
+        }
+      }
+      return urls
+    })()
+    let API_BASE = API_URLS[0]
+
+    const rowsEl = document.getElementById('rows')
+    const searchEl = document.getElementById('search')
+    const refreshEl = document.getElementById('refresh')
+    const form = document.getElementById('edit-form')
+    const producerFields = document.getElementById('producer-fields')
+    const statusEl = document.getElementById('status')
+    const toggleStatusBtn = document.getElementById('toggle-status')
+    const resetPasswordBtn = document.getElementById('reset-password')
+    const deleteAccountBtn = document.getElementById('delete-account')
+
+    let accounts = []
+    let selected = null
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message
+    }
+
+    function renderRows() {
+      const term = searchEl.value.trim().toLowerCase()
+      const filtered = accounts.filter(account => {
+        const haystack = [
+          account.name,
+          account.email,
+          account.phone_number,
+          account.producer?.farm_name,
+          account.producer?.location,
+          account.producer?.contact_email,
+          account.producer?.contact_phone,
+        ].join(' ').toLowerCase()
+        return !term || haystack.includes(term)
+      })
+
+      rowsEl.innerHTML = filtered.map(account => {
+        const producerBits = account.producer
+          ? `${escapeHtml(account.producer.farm_name)}<br><span class="muted">${escapeHtml(account.producer.location || 'No location')}</span>`
+          : '<span class="muted">—</span>'
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(account.name)}</strong><br><span class="muted">${escapeHtml(account.phone_number || 'No phone')}</span></td>
+            <td>${escapeHtml(account.email)}</td>
+            <td><span class="chip ${escapeHtml(account.role)}">${escapeHtml(account.role)}</span></td>
+            <td><span class="chip ${account.is_active ? 'active' : 'inactive'}">${account.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>${new Date(account.created_at).toLocaleString('en-GB')}</td>
+            <td>${producerBits}</td>
+            <td>
+              <div class="cell-actions">
+                <button type="button" class="secondary" data-action="edit" data-id="${account.user_id}">Edit</button>
+                <button type="button" class="warn" data-action="status" data-id="${account.user_id}">${account.is_active ? 'Disable' : 'Reactivate'}</button>
+                <button type="button" class="secondary" data-action="password" data-id="${account.user_id}">Reset password</button>
+                <button type="button" class="danger" data-action="delete" data-id="${account.user_id}">Delete</button>
+              </div>
+            </td>
+          </tr>`
+      }).join('') || '<tr><td colspan="7" class="muted">No matching accounts found.</td></tr>'
+    }
+
+    function populateForm(account) {
+      selected = account
+      document.getElementById('first_name').value = account.first_name
+      document.getElementById('last_name').value = account.last_name
+      document.getElementById('email').value = account.email
+      document.getElementById('phone_number').value = account.phone_number || ''
+      document.getElementById('role').value = account.role
+      document.getElementById('created_at').value = new Date(account.created_at).toLocaleString('en-GB')
+
+      if (account.producer) {
+        producerFields.classList.remove('hidden')
+        document.getElementById('farm_name').value = account.producer.farm_name || ''
+        document.getElementById('location').value = account.producer.location || ''
+        document.getElementById('contact_email').value = account.producer.contact_email || ''
+        document.getElementById('contact_phone').value = account.producer.contact_phone || ''
+        document.getElementById('description').value = account.producer.description || ''
+      } else {
+        producerFields.classList.add('hidden')
+        document.getElementById('farm_name').value = ''
+        document.getElementById('location').value = ''
+        document.getElementById('contact_email').value = ''
+        document.getElementById('contact_phone').value = ''
+        document.getElementById('description').value = ''
+      }
+
+      toggleStatusBtn.textContent = account.is_active ? 'Disable' : 'Reactivate'
+      setStatus(`Editing ${account.name}`)
+    }
+
+    async function loadAccounts() {
+      setStatus('Loading accounts…')
+      for (const base of API_URLS) {
+        const url = `${base}/api/auth/manage/accounts`
+        try {
+          const controller = new AbortController()
+          const timer = setTimeout(() => controller.abort(), 5000)
+          const res = await fetch(url, { signal: controller.signal })
+          clearTimeout(timer)
+          if (!res.ok) continue
+          const data = await res.json()
+          if (!Array.isArray(data)) continue
+          // This base works — remember it for all future requests
+          API_BASE = base
+          accounts = data
+          renderRows()
+          if (selected) {
+            const next = accounts.find(a => a.user_id === selected.user_id)
+            if (next) populateForm(next)
+          }
+          setStatus(`${accounts.length} account(s) loaded.`)
+          return
+        } catch (_) { /* try next base */ }
+      }
+      setStatus('Could not reach the backend. Open this page from port 5000: /backend-tools/account-manager.html')
+    }
+
+    async function patchAccountStatus(account) {
+      await fetch(`${API_BASE}/api/auth/manage/accounts/${account.user_id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: account.is_active ? 0 : 1 }),
+      })
+      await loadAccounts()
+      populateForm(accounts.find(item => item.user_id === account.user_id) || account)
+    }
+
+    async function resetPassword(account) {
+      const nextPassword = window.prompt(`Enter a new password for ${account.name}`)
+      if (!nextPassword) return
+      const res = await fetch(`${API_BASE}/api/auth/manage/accounts/${account.user_id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: nextPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Password reset failed')
+      setStatus(`Password reset for ${account.name}`)
+    }
+
+    async function deleteAccount(account) {
+      const confirmed = window.confirm(`Delete ${account.name}? This also removes linked products and orders.`)
+      if (!confirmed) return
+      const res = await fetch(`${API_BASE}/api/auth/manage/accounts/${account.user_id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Delete failed')
+      selected = null
+      form.reset()
+      producerFields.classList.add('hidden')
+      await loadAccounts()
+      setStatus(`${account.name} deleted.`)
+    }
+
+    rowsEl.addEventListener('click', async event => {
+      const button = event.target.closest('button[data-action]')
+      if (!button) return
+      const account = accounts.find(item => item.user_id === Number(button.dataset.id))
+      if (!account) return
+
+      try {
+        if (button.dataset.action === 'edit') populateForm(account)
+        if (button.dataset.action === 'status') await patchAccountStatus(account)
+        if (button.dataset.action === 'password') await resetPassword(account)
+        if (button.dataset.action === 'delete') await deleteAccount(account)
+      } catch (error) {
+        setStatus(error.message)
+      }
+    })
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault()
+      if (!selected) return
+
+      const payload = {
+        first_name: document.getElementById('first_name').value,
+        last_name: document.getElementById('last_name').value,
+        email: document.getElementById('email').value,
+        phone_number: document.getElementById('phone_number').value,
+        farm_name: document.getElementById('farm_name').value,
+        location: document.getElementById('location').value,
+        contact_email: document.getElementById('contact_email').value,
+        contact_phone: document.getElementById('contact_phone').value,
+        description: document.getElementById('description').value,
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/manage/accounts/${selected.user_id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Update failed')
+        await loadAccounts()
+        populateForm(data.account)
+        setStatus(`${data.account.name} updated.`)
+      } catch (error) {
+        setStatus(error.message)
+      }
+    })
+
+    toggleStatusBtn.addEventListener('click', async () => {
+      if (!selected) return
+      try {
+        await patchAccountStatus(selected)
+      } catch (error) {
+        setStatus(error.message)
+      }
+    })
+
+    resetPasswordBtn.addEventListener('click', async () => {
+      if (!selected) return
+      try {
+        await resetPassword(selected)
+      } catch (error) {
+        setStatus(error.message)
+      }
+    })
+
+    deleteAccountBtn.addEventListener('click', async () => {
+      if (!selected) return
+      try {
+        await deleteAccount(selected)
+      } catch (error) {
+        setStatus(error.message)
+      }
+    })
+
+    searchEl.addEventListener('input', renderRows)
+    refreshEl.addEventListener('click', loadAccounts)
+
+    loadAccounts().catch(error => setStatus(error.message))
+  </script>
+</body>
+</html>

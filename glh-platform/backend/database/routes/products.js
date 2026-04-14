@@ -4,6 +4,7 @@ const db = require('../db')
 const { requireAuth, requireRole } = require('../middleware/auth')
 
 const isProducer = [requireAuth, requireRole('producer')]
+const KNOWN_ALLERGENS = ['nuts', 'gluten', 'dairy', 'eggs', 'fish', 'soya']
 
 async function resolveCategoryId(categoryId, categoryName) {
   if (categoryId) return categoryId
@@ -17,7 +18,43 @@ async function resolveCategoryId(categoryId, categoryName) {
   return created.lastInsertRowid
 }
 
-// Helper: verify product belongs to this producer
+function normalizeAllergenNames(input) {
+  if (!input) return []
+
+  const values = Array.isArray(input) ? input : String(input).split(',')
+  const cleaned = values
+    .map(v => String(v || '').trim().toLowerCase())
+    .filter(Boolean)
+
+  const deduped = Array.from(new Set(cleaned))
+  return deduped.filter(name => KNOWN_ALLERGENS.includes(name))
+}
+
+async function syncProductAllergens(productId, allergenNames) {
+  await db.runAsync('DELETE FROM product_allergens WHERE product_id = ?', [productId])
+
+  for (const name of allergenNames) {
+    const existing = await db.getAsync('SELECT allergen_id FROM allergens WHERE lower(name) = ?', [name])
+    let allergenId = existing?.allergen_id
+
+    if (!allergenId) {
+      const prettyName = name.charAt(0).toUpperCase() + name.slice(1)
+      const created = await db.runAsync('INSERT INTO allergens (name) VALUES (?)', [prettyName])
+      allergenId = created.lastInsertRowid
+    }
+
+    await db.runAsync(
+      'INSERT OR IGNORE INTO product_allergens (product_id, allergen_id) VALUES (?, ?)',
+      [productId, allergenId]
+    )
+  }
+}
+
+function formatAllergens(list) {
+  if (!list) return []
+  return Array.from(new Set(String(list).split(',').map(a => a.trim()).filter(Boolean)))
+}
+
 async function ownedProduct(productId, userId) {
   return db.getAsync(
     `SELECT p.product_id FROM products p
@@ -27,11 +64,11 @@ async function ownedProduct(productId, userId) {
   )
 }
 
-// GET /api/producers — public list of all producers with product count
 router.get('/producers', async (_req, res) => {
   try {
     const rows = await db.allAsync(
       `SELECT pr.producer_id, pr.user_id, pr.farm_name, pr.description, pr.location,
+              pr.contact_email, pr.contact_phone,
               COUNT(DISTINCT p.product_id) AS product_count
        FROM producers pr
        LEFT JOIN products p ON pr.producer_id = p.producer_id AND p.is_active = 1
@@ -45,7 +82,6 @@ router.get('/producers', async (_req, res) => {
   }
 })
 
-// GET /api/products/mine — list this producer's products
 router.get('/mine', ...isProducer, async (req, res) => {
   try {
     const rows = await db.allAsync(
@@ -61,14 +97,13 @@ router.get('/mine', ...isProducer, async (req, res) => {
        ORDER BY p.created_at DESC`,
       [req.user.userId]
     )
-    res.json(rows.map(r => ({ ...r, allergens: r.allergens ? r.allergens.split(',') : [] })))
+    res.json(rows.map(r => ({ ...r, allergens: formatAllergens(r.allergens) })))
   } catch (err) {
     console.error('GET /mine error:', err)
     res.status(500).json({ error: 'Server error' })
   }
 })
 
-// GET /api/products — public catalogue list
 router.get('/', async (_req, res) => {
   try {
     const rows = await db.allAsync(
@@ -86,7 +121,7 @@ router.get('/', async (_req, res) => {
 
     const products = rows.map(r => ({
       ...r,
-      allergens: r.allergens ? r.allergens.split(',') : [],
+      allergens: formatAllergens(r.allergens),
     }))
 
     res.json(products)
@@ -96,11 +131,10 @@ router.get('/', async (_req, res) => {
   }
 })
 
-// POST /api/products — create a product
 router.post('/', ...isProducer, async (req, res) => {
   try {
     const { name, description, price, unit, stock_quantity, low_stock_threshold,
-            batch_number, ingredients, category_id, category_name, image_url, is_active } = req.body
+            batch_number, ingredients, category_id, category_name, image_url, is_active, allergens } = req.body
 
     if (!name?.trim() || !price || !unit?.trim() || !batch_number?.trim() || !ingredients?.trim()) {
       return res.status(400).json({ error: 'name, price, unit, batch_number and ingredients are required' })
@@ -134,6 +168,7 @@ router.post('/', ...isProducer, async (req, res) => {
         is_active !== undefined ? (is_active ? 1 : 0) : 1,
       ]
     )
+    await syncProductAllergens(result.lastInsertRowid, normalizeAllergenNames(allergens))
     res.status(201).json({ product_id: result.lastInsertRowid, message: 'Product created' })
   } catch (err) {
     console.error('POST / error:', err)
@@ -141,14 +176,13 @@ router.post('/', ...isProducer, async (req, res) => {
   }
 })
 
-// PUT /api/products/:id — update product details
 router.put('/:id', ...isProducer, async (req, res) => {
   try {
     const product = await ownedProduct(req.params.id, req.user.userId)
     if (!product) return res.status(404).json({ error: 'Product not found' })
 
     const { name, description, price, unit, low_stock_threshold,
-            batch_number, ingredients, category_id, category_name, image_url, is_active } = req.body
+          batch_number, ingredients, category_id, category_name, image_url, is_active, allergens } = req.body
 
     if (!name?.trim() || !price || !unit?.trim() || !batch_number?.trim() || !ingredients?.trim()) {
       return res.status(400).json({ error: 'name, price, unit, batch_number and ingredients are required' })
@@ -168,6 +202,7 @@ router.put('/:id', ...isProducer, async (req, res) => {
         req.params.id,
       ]
     )
+    await syncProductAllergens(req.params.id, normalizeAllergenNames(allergens))
     res.json({ message: 'Product updated' })
   } catch (err) {
     console.error('PUT /:id error:', err)
@@ -175,7 +210,6 @@ router.put('/:id', ...isProducer, async (req, res) => {
   }
 })
 
-// PATCH /api/products/:id/stock — amend stock quantity
 router.patch('/:id/stock', ...isProducer, async (req, res) => {
   try {
     const product = await ownedProduct(req.params.id, req.user.userId)
@@ -197,7 +231,6 @@ router.patch('/:id/stock', ...isProducer, async (req, res) => {
   }
 })
 
-// DELETE /api/products/:id
 router.delete('/:id', ...isProducer, async (req, res) => {
   try {
     const product = await ownedProduct(req.params.id, req.user.userId)
@@ -211,7 +244,6 @@ router.delete('/:id', ...isProducer, async (req, res) => {
   }
 })
 
-// GET /api/products/analytics
 router.get('/analytics', ...isProducer, async (req, res) => {
   try {
     const producer = await db.getAsync(

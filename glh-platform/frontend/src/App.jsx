@@ -13,10 +13,12 @@ import RegisterProducer from './pages/public/RegisterProducer'
 import Producers     from './pages/public/Producers'
 import LocallyGrown  from './pages/public/LocallyGrown'
 import FullyTraceable from './pages/public/FullyTraceable'
+import About         from './pages/public/About'
 
 import MyOrders      from './pages/customer/MyOrders'
 import Checkout      from './pages/customer/Checkout'
 import OrderConfirmation from './pages/customer/OrderConfirmation'
+import AccountSettings from './pages/account/AccountSettings'
 
 import ProducerDashboard from './pages/producer/ProducerDashboard'
 import AdminPanel    from './pages/admin/AdminPanel'
@@ -46,9 +48,11 @@ export default function App() {
         <Route path="/feature/fully-traceable" element={<FullyTraceable />} />
         <Route path="/checkout"    element={<Checkout />} />
         <Route path="/order-confirmation/:ref" element={<OrderConfirmation />} />
+        <Route path="/account"     element={<RequireAuth><AccountSettings /></RequireAuth>} />
         <Route path="/orders"      element={<RequireAuth><MyOrders /></RequireAuth>} />
         <Route path="/producer"    element={<RequireAuth role="producer"><ProducerDashboard /></RequireAuth>} />
-        <Route path="/admin"       element={<RequireAuth role="admin"><AdminPanel /></RequireAuth>} />
+        <Route path="/admin"       element={<RequireAuth><AdminPanel /></RequireAuth>} />
+        <Route path="/about"       element={<About />} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
     </>

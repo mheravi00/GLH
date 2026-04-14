@@ -19,22 +19,18 @@ export default function Navbar() {
     setMobileOpen(false)
   }
 
-  const dashLink = user?.role === 'admin'
-    ? '/admin'
-    : user?.role === 'producer'
+  const dashLink = user?.role === 'producer'
     ? '/producer'
     : '/orders'
 
   return (
     <header className={styles.header} role="banner">
       <div className={`container ${styles.inner}`}>
-        {/* Logo */}
         <Link to="/" className={styles.logo} aria-label="GLH Home">
           <Leaf size={22} aria-hidden="true" />
           <span>Greenfield Local Hub</span>
         </Link>
 
-        {/* Desktop nav */}
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link to="/" className={styles.navLink}>Home</Link>
           <Link to="/catalogue" className={styles.navLink}>Catalogue</Link>
@@ -43,7 +39,6 @@ export default function Navbar() {
           {user && <Link to={dashLink} className={styles.navLink}>Dashboard</Link>}
         </nav>
 
-        {/* Actions */}
         <div className={styles.actions}>
           <button
             className={styles.themeToggle}
@@ -55,7 +50,7 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <Link to={dashLink} className={`btn btn-sm ${styles.btnRegister}`}>
+              <Link to="/account" className={`btn btn-sm ${styles.btnRegister}`}>
                 My Account
               </Link>
             </>
@@ -76,7 +71,6 @@ export default function Navbar() {
             )}
           </button>
 
-          {/* Mobile hamburger */}
           <button
             className={styles.hamburger}
             onClick={() => setMobileOpen(v => !v)}
@@ -88,7 +82,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <div className={styles.mobileMenu} role="navigation" aria-label="Mobile navigation">
           <Link to="/" onClick={() => setMobileOpen(false)}>Home</Link>

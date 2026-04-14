@@ -1,0 +1,110 @@
+.page {
+  padding: var(--sp-8) 0 var(--sp-16);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-6);
+}
+
+.kicker {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--clr-neutral-500);
+  margin-bottom: var(--sp-2);
+}
+
+.subtitle {
+  color: var(--clr-neutral-500);
+  max-width: 640px;
+}
+
+.quickLinks {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .8fr);
+  gap: var(--sp-6);
+}
+
+.stack {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+.card {
+  background: var(--clr-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-6);
+}
+
+.formCard {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.metaLabel {
+  color: var(--clr-neutral-500);
+  font-size: var(--text-xs);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+.sectionDivider {
+  height: 1px;
+  background: var(--clr-neutral-100);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+}
+
+.dangerCard {
+  border: 1px solid rgba(198, 40, 40, .16);
+}
+
+.dangerText {
+  color: var(--clr-neutral-500);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

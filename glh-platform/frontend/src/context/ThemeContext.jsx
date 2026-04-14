@@ -1,10 +1,8 @@
-import { createContext, useState, useEffect } from 'react'
-
-export const ThemeContext = createContext()
+import { useState, useEffect } from 'react'
+import { ThemeContext } from './theme-context'
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    // Check localStorage or system preference
     const saved = localStorage.getItem('theme')
     if (saved) return saved
     
@@ -15,7 +13,6 @@ export function ThemeProvider({ children }) {
   })
 
   useEffect(() => {
-    // Apply theme to document
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('theme', theme)
   }, [theme])

@@ -1,5 +1,13 @@
 const db = require('./db')
 
+async function ensureColumn(tableName, columnName, definition) {
+  const columns = await db.allAsync(`PRAGMA table_info(${tableName})`)
+  const exists = columns.some(column => column.name === columnName)
+  if (!exists) {
+    await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`)
+  }
+}
+
 async function init() {
   await db.execAsync(`
   CREATE TABLE IF NOT EXISTS users (
@@ -8,6 +16,7 @@ async function init() {
     password_hash TEXT NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
+    phone_number TEXT,
     role TEXT NOT NULL DEFAULT 'customer',
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -18,7 +27,9 @@ async function init() {
     user_id INTEGER NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
     farm_name TEXT NOT NULL,
     description TEXT,
-    location TEXT
+    location TEXT,
+    contact_email TEXT,
+    contact_phone TEXT
   );
 
   CREATE TABLE IF NOT EXISTS categories (
@@ -85,6 +96,10 @@ async function init() {
     tier TEXT NOT NULL DEFAULT 'standard'
   );
 `)
+
+  await ensureColumn('users', 'phone_number', 'TEXT')
+  await ensureColumn('producers', 'contact_email', 'TEXT')
+  await ensureColumn('producers', 'contact_phone', 'TEXT')
 
   console.log('Database tables created successfully')
 }

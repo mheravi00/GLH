@@ -10,7 +10,6 @@ import Modal from '../../components/Modal'
 import api   from '../../utils/api'
 import styles from './ProducerDashboard.module.css'
 
-/* ─── Mock seed data (used until API returns real data) ────────────────── */
 const SEED_PRODUCTS = []
 const SEED_ORDERS = []
 const SEED_ANALYTICS = {
@@ -23,10 +22,11 @@ const SEED_ANALYTICS = {
 
 const BLANK_PRODUCT = {
   name:'', description:'', price:'', unit:'', stock_quantity:'0',
-  low_stock_threshold:'5', batch_number:'', ingredients:'', category_name:'', image_url:'', is_active:1,
+  low_stock_threshold:'5', batch_number:'', ingredients:'', category_name:'', image_url:'', is_active:1, allergens: [],
 }
 
-/* ─── Helpers ───────────────────────────────────────────────────────────── */
+const ALLERGEN_OPTIONS = ['Nuts', 'Gluten', 'Dairy', 'Eggs', 'Fish', 'Soya']
+
 function stockBadge(qty, threshold) {
   if (qty === 0)        return <span className="badge badge-red">Out of stock</span>
   if (qty <= threshold) return <span className="badge badge-amber">Low ({qty})</span>
@@ -37,7 +37,8 @@ function orderBadge(status) {
   return <span className={`badge ${map[status] ?? 'badge-grey'}`}>{status}</span>
 }
 
-/* ─── Sub-components ────────────────────────────────────────────────────── */
+const ORDER_STATUS_OPTIONS = ['placed', 'confirmed', 'ready', 'collected', 'delivered', 'cancelled']
+
 function StatCard({ label, value, icon, color }) {
   return (
     <li className={`${styles.summaryCard} ${styles[color]}`}>
@@ -75,9 +76,17 @@ function BarChartCSS({ data, valueKey, labelKey, color = 'var(--clr-primary)' })
   )
 }
 
-/* ─── Product form modal ────────────────────────────────────────────────── */
 function ProductModal({ product, onClose, onSave }) {
-  const [form, setForm]   = useState(product ? { ...product, price: String(product.price), stock_quantity: String(product.stock_quantity), low_stock_threshold: String(product.low_stock_threshold), image_url: product.image_url || '' } : { ...BLANK_PRODUCT })
+  const [form, setForm]   = useState(product
+    ? {
+      ...product,
+      price: String(product.price),
+      stock_quantity: String(product.stock_quantity),
+      low_stock_threshold: String(product.low_stock_threshold),
+      image_url: product.image_url || '',
+      allergens: Array.isArray(product.allergens) ? product.allergens : [],
+    }
+    : { ...BLANK_PRODUCT })
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const isEdit = !!product?.product_id
@@ -102,6 +111,7 @@ function ProductModal({ product, onClose, onSave }) {
       price:             Number(form.price),
       stock_quantity:    Number(form.stock_quantity) || 0,
       low_stock_threshold: Number(form.low_stock_threshold) || 5,
+      allergens: form.allergens,
     }
     try {
       let result
@@ -164,6 +174,30 @@ function ProductModal({ product, onClose, onSave }) {
           {errors.ingredients && <span className="form-error" role="alert">{errors.ingredients}</span>}
         </div>
 
+        <fieldset className={styles.allergenFieldset}>
+          <legend className="form-label">Declared Allergens</legend>
+          <div className={styles.allergenGrid}>
+            {ALLERGEN_OPTIONS.map((name) => {
+              const checked = form.allergens.includes(name)
+              return (
+                <label key={name} className={styles.allergenOption}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => setForm((prev) => ({
+                      ...prev,
+                      allergens: checked
+                        ? prev.allergens.filter(a => a !== name)
+                        : [...prev.allergens, name],
+                    }))}
+                  />
+                  <span>{name}</span>
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+
         <div className="form-group">
           <label className="form-label" htmlFor="pm-description">Description</label>
           <textarea
@@ -197,14 +231,13 @@ function ProductModal({ product, onClose, onSave }) {
   )
 }
 
-/* ─── Main Dashboard ─────────────────────────────────────────────────────── */
 export default function ProducerDashboard() {
   const { logout } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
   const [tab,       setTab]      = useState('overview')
   const [products,  setProducts] = useState(SEED_PRODUCTS)
-  const [orders]                 = useState(SEED_ORDERS)
+  const [orders, setOrders]      = useState(SEED_ORDERS)
   const [analytics, setAnalytics]= useState(SEED_ANALYTICS)
   const [modal,     setModal]    = useState(null)   // null | 'add' | product object
   const [stockEdit, setStockEdit]= useState(null)   // { id, value }
@@ -221,13 +254,17 @@ export default function ProducerDashboard() {
     setAnalytics(res.data || SEED_ANALYTICS)
   }, [])
 
-  /* Fetch from API on mount */
+  const refreshOrders = useCallback(async () => {
+    const res = await api.get('/orders/producer')
+    setOrders(Array.isArray(res.data) ? res.data : [])
+  }, [])
+
   useEffect(() => {
     refreshProducts().catch(() => {})
     refreshAnalytics().catch(() => {})
-  }, [refreshProducts, refreshAnalytics])
+    refreshOrders().catch(() => {})
+  }, [refreshProducts, refreshAnalytics, refreshOrders])
 
-  /* Summary stats */
   const lowStockItems = products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold)
   const outOfStock    = products.filter(p => p.stock_quantity === 0)
   const weekRevenue   = `£${(analytics.totalRevenue ?? 0).toFixed(2)}`
@@ -238,9 +275,7 @@ export default function ProducerDashboard() {
     { label:'Low / out of stock', value: lowStockItems.length + outOfStock.length, icon:<AlertTriangle size={20}/>, color: (lowStockItems.length + outOfStock.length) > 0 ? 'amber' : 'green' },
   ]
 
-  /* Save product from modal */
   const handleSave = useCallback((createdId, payload) => {
-    // Immediate local update so product appears right away, then sync from backend.
     if (createdId) {
       setProducts(prev => [{
         ...payload,
@@ -253,7 +288,6 @@ export default function ProducerDashboard() {
     refreshAnalytics().catch(() => {})
   }, [addToast, refreshProducts, refreshAnalytics])
 
-  /* Delete */
   async function handleDelete(id) {
     try {
       await api.delete(`/products/${id}`)
@@ -266,7 +300,16 @@ export default function ProducerDashboard() {
     setDeleteConfirm(null)
   }
 
-  /* Inline stock save */
+  async function handleOrderStatusChange(orderId, status) {
+    try {
+      await api.patch(`/orders/producer/${orderId}/status`, { status })
+      await refreshOrders()
+      addToast('Order status updated')
+    } catch {
+      addToast('Could not update order status', 'error')
+    }
+  }
+
   async function commitStock() {
     const { id, value } = stockEdit
     const qty = parseInt(value, 10)
@@ -287,10 +330,10 @@ export default function ProducerDashboard() {
     (p.category_name ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
-  /* ── TABS ── */
   const TABS = [
     { id:'overview',  label:'Overview',  icon:<LayoutDashboard size={15}/> },
     { id:'products',  label:'Products',  icon:<Package         size={15}/> },
+    { id:'orders',    label:'Orders',    icon:<ShoppingBag     size={15}/> },
     { id:'analytics', label:'Analytics', icon:<BarChart2       size={15}/> },
   ]
 
@@ -302,7 +345,6 @@ export default function ProducerDashboard() {
   return (
     <main className={styles.page}>
       <div className="container">
-        {/* Header */}
         <div className={styles.pageHeader}>
           <h1>Producer Dashboard</h1>
           <div className={styles.headerActions}>
@@ -315,7 +357,6 @@ export default function ProducerDashboard() {
           </div>
         </div>
 
-        {/* Tab bar */}
         <div className={styles.tabBar} role="tablist">
           {TABS.map(t => (
             <button
@@ -330,7 +371,6 @@ export default function ProducerDashboard() {
           ))}
         </div>
 
-        {/* ── OVERVIEW TAB ── */}
         {tab === 'overview' && (
           <div>
             <ul className={styles.summaryGrid} role="list">
@@ -348,7 +388,6 @@ export default function ProducerDashboard() {
             )}
 
             <div className={styles.overviewGrid}>
-              {/* Products preview */}
               <section className={styles.tableSection} aria-labelledby="ov-products">
                 <div className={styles.sectionHeader}>
                   <h2 id="ov-products">My Products</h2>
@@ -381,7 +420,6 @@ export default function ProducerDashboard() {
                 </div>
               </section>
 
-              {/* Recent orders */}
               <section className={styles.tableSection} aria-labelledby="ov-orders">
                 <div className={styles.sectionHeader}><h2 id="ov-orders">Recent Orders</h2></div>
                 <div className={styles.tableWrap}>
@@ -398,12 +436,12 @@ export default function ProducerDashboard() {
                           <td colSpan={4} className={styles.emptyRow}>No orders yet.</td>
                         </tr>
                       )}
-                      {orders.map(o => (
+                      {orders.slice(0, 5).map(o => (
                         <tr key={o.order_ref}>
                           <td className={styles.tdRef}>{o.order_ref}</td>
-                          <td>{o.customer}</td>
+                          <td>{o.customer_name}</td>
                           <td>{orderBadge(o.status)}</td>
-                          <td>£{o.total.toFixed(2)}</td>
+                          <td>£{Number(o.total_amount).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -414,7 +452,6 @@ export default function ProducerDashboard() {
           </div>
         )}
 
-        {/* ── PRODUCTS TAB ── */}
         {tab === 'products' && (
           <section aria-labelledby="prod-heading">
             <div className={styles.productsToolbar}>
@@ -455,7 +492,6 @@ export default function ProducerDashboard() {
                         <td>{p.category_name || '—'}</td>
                         <td>£{Number(p.price).toFixed(2)} / {p.unit}</td>
 
-                        {/* Inline stock edit */}
                         <td>
                           {stockEdit?.id === p.product_id ? (
                             <div className={styles.stockEditRow}>
@@ -518,10 +554,67 @@ export default function ProducerDashboard() {
           </section>
         )}
 
-        {/* ── ANALYTICS TAB ── */}
+        {tab === 'orders' && (
+          <section aria-labelledby="orders-heading" className={styles.tableSection}>
+            <div className={styles.sectionHeader}>
+              <h2 id="orders-heading">Order fulfilment</h2>
+            </div>
+
+            <div className={styles.tableWrap}>
+              <table className={styles.table} aria-label="Producer orders">
+                <thead>
+                  <tr>
+                    <th scope="col">Reference</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Items</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className={styles.emptyRow}>No producer orders yet.</td>
+                    </tr>
+                  )}
+
+                  {orders.map(order => (
+                    <tr key={order.order_id}>
+                      <td className={styles.tdRef}>{order.order_ref}</td>
+                      <td>
+                        <div>{order.customer_name}</div>
+                        <span className={styles.tdSub}>{order.customer_email}</span>
+                      </td>
+                      <td>
+                        {(order.items || []).map(item => (
+                          <div key={item.item_id} className={styles.tdSub}>
+                            {item.product_name} x{item.quantity}
+                          </div>
+                        ))}
+                      </td>
+                      <td>£{Number(order.total_amount).toFixed(2)}</td>
+                      <td>
+                        <select
+                          className={`form-input ${styles.statusSelect}`}
+                          value={order.status}
+                          onChange={(e) => handleOrderStatusChange(order.order_id, e.target.value)}
+                          aria-label={`Update status for ${order.order_ref}`}
+                        >
+                          {ORDER_STATUS_OPTIONS.map(status => (
+                            <option key={status} value={status}>{status}</option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         {tab === 'analytics' && (
           <div className={styles.analyticsGrid}>
-            {/* KPI row */}
             <ul className={styles.kpiRow} role="list">
               <li className={styles.kpiCard}>
                 <span className={styles.kpiValue}>£{(analytics.totalRevenue ?? 0).toFixed(2)}</span>
@@ -541,7 +634,6 @@ export default function ProducerDashboard() {
               </li>
             </ul>
 
-            {/* Top products */}
             <section className={styles.chartCard} aria-labelledby="chart-top">
               <h2 id="chart-top" className={styles.chartTitle}>Top products by revenue</h2>
               <BarChartCSS
@@ -551,7 +643,6 @@ export default function ProducerDashboard() {
               />
             </section>
 
-            {/* Revenue trend */}
             <section className={styles.chartCard} aria-labelledby="chart-trend">
               <h2 id="chart-trend" className={styles.chartTitle}>Revenue trend (last 7 days)</h2>
               <BarChartCSS
@@ -562,7 +653,6 @@ export default function ProducerDashboard() {
               />
             </section>
 
-            {/* Stock overview */}
             <section className={styles.chartCard} aria-labelledby="chart-stock">
               <h2 id="chart-stock" className={styles.chartTitle}>Stock overview</h2>
               <ul className={styles.stockStats} role="list">
@@ -592,7 +682,6 @@ export default function ProducerDashboard() {
         )}
       </div>
 
-      {/* Product add / edit modal */}
       {modal && (
         <ProductModal
           product={modal === 'add' ? null : modal}

@@ -6,12 +6,10 @@ export default function LocallyGrown() {
   return (
     <main className={styles.page}>
       <div className="container">
-        {/* Back link */}
         <Link to="/" className={styles.backLink}>
           <ArrowLeft size={16} aria-hidden="true" /> Back to home
         </Link>
 
-        {/* Hero image */}
         <div className={styles.heroImage}>
           <img 
             src="https://unsplash.com/photos/r0ZrCr7ZVl0/download?force=true&w=1200" 
@@ -19,7 +17,6 @@ export default function LocallyGrown() {
           />
         </div>
 
-        {/* Content */}
         <article className={styles.content}>
           <h1>Locally Grown</h1>
           <p className={styles.subtitle}>
@@ -66,7 +63,6 @@ export default function LocallyGrown() {
             <h2>Comments & Explanations</h2>
             <div className={styles.commentsBox}>
               <p className={styles.placeholder}>Add your detailed explanations, insights, or additional information here.</p>
-              {/* Add comment form here if needed */}
             </div>
           </section>
         </article>

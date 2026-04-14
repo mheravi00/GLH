@@ -6,7 +6,7 @@ const db = new sqlite3.Database(path.join(__dirname, dbFile))
 
 db.serialize(() => {
   db.run('PRAGMA foreign_keys = ON')
-  db.run('PRAGMA journal_mode = WAL')
+  db.run('PRAGMA journal_mode = DELETE')
 })
 
 db.getAsync = (sql, params = []) =>

@@ -11,7 +11,6 @@
 .pageHeader h1 { margin-bottom: var(--sp-2); }
 .pageHeader p  { font-size: var(--text-sm); color: var(--clr-neutral-500); max-width: 560px; }
 
-/* Search */
 .searchWrap {
   position: relative;
   max-width: 480px;
@@ -32,7 +31,6 @@
   margin-bottom: var(--sp-6);
 }
 
-/* Grid */
 .grid {
   list-style: none;
   padding: 0;
@@ -43,7 +41,6 @@
 @media (min-width: 600px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1000px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 
-/* Card */
 .card {
   display: flex;
   flex-direction: column;
@@ -105,13 +102,18 @@
   color: var(--clr-neutral-500);
 }
 
+.contactInfo {
+  margin-top: var(--sp-1);
+  font-size: var(--text-xs);
+  color: var(--clr-neutral-500);
+}
+
 .shopBtn {
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-/* Empty state */
 .empty {
   padding: var(--sp-16);
   text-align: center;
