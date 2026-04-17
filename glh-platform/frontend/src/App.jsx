@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar        from './components/Navbar'
 import BasketDrawer  from './components/BasketDrawer'
+import Footer        from './components/Footer'
+import ConsentBanner from './components/ConsentBanner'
 import { useAuth }   from './context/useAuth'
 
 import Home          from './pages/public/Home'
@@ -15,6 +17,9 @@ import Producers     from './pages/public/Producers'
 import LocallyGrown  from './pages/public/LocallyGrown'
 import FullyTraceable from './pages/public/FullyTraceable'
 import About         from './pages/public/About'
+import FindUs        from './pages/public/FindUs'
+import PrivacyPolicy from './pages/public/PrivacyPolicy'
+import TermsConditions from './pages/public/TermsConditions'
 
 import MyOrders      from './pages/customer/MyOrders'
 import Checkout      from './pages/customer/Checkout'
@@ -36,6 +41,7 @@ export default function App() {
     <>
       <Navbar />
       <BasketDrawer />
+      <ConsentBanner />
       <Routes>
         <Route path="/"            element={<Home />} />
         <Route path="/catalogue"   element={<Catalogue />} />
@@ -44,7 +50,7 @@ export default function App() {
         <Route path="/login"              element={<Login />} />
         <Route path="/register"           element={<Register />} />
         <Route path="/register/producer"  element={<RegisterProducer />} />
-        <Route path="/register/admin"     element={<RegisterAdmin />} />
+        <Route path="/register/admin"     element={<RequireAuth role="admin"><RegisterAdmin /></RequireAuth>} />
         <Route path="/producers"          element={<Producers />} />
         <Route path="/feature/locally-grown" element={<LocallyGrown />} />
         <Route path="/feature/fully-traceable" element={<FullyTraceable />} />
@@ -55,8 +61,12 @@ export default function App() {
         <Route path="/producer"    element={<RequireAuth role="producer"><ProducerDashboard /></RequireAuth>} />
         <Route path="/admin"       element={<RequireAuth role="admin"><AdminPanel /></RequireAuth>} />
         <Route path="/about"       element={<About />} />
+        <Route path="/find-us"    element={<FindUs />} />
+        <Route path="/privacy"    element={<PrivacyPolicy />} />
+        <Route path="/terms"      element={<TermsConditions />} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
+      <Footer />
     </>
   )
 }

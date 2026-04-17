@@ -15,9 +15,10 @@ if (!process.env.JWT_SECRET) {
 
 require('./database/schema')
 
-const authRoutes    = require('./database/routes/auth')
-const productRoutes = require('./database/routes/products')
-const orderRoutes   = require('./database/routes/orders')
+const authRoutes      = require('./database/routes/auth')
+const productRoutes   = require('./database/routes/products')
+const orderRoutes     = require('./database/routes/orders')
+const allergenRoutes  = require('./database/routes/allergens')
 
 const app = express()
 app.use(cors())
@@ -55,9 +56,10 @@ app.get('/backend-tools/readable-tables.html', (_req, res) => {
 
 app.use('/backend-tools', express.static(path.join(__dirname, 'database')))
 
-app.use('/api/auth',     authRoutes)
-app.use('/api/products', productRoutes)
-app.use('/api/orders',   orderRoutes)
+app.use('/api/auth',      authRoutes)
+app.use('/api/products',  productRoutes)
+app.use('/api/orders',    orderRoutes)
+app.use('/api/allergens', allergenRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'GLH API is running' })

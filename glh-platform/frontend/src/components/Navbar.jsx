@@ -38,6 +38,7 @@ export default function Navbar() {
           <Link to="/catalogue" className={styles.navLink}>Catalogue</Link>
           <Link to="/producers" className={styles.navLink}>Producers</Link>
           <Link to="/about" className={styles.navLink}>About</Link>
+          <Link to="/find-us" className={styles.navLink}>Find Us</Link>
           {user && <Link to={dashLink} className={styles.navLink}>Dashboard</Link>}
         </nav>
 
@@ -90,6 +91,7 @@ export default function Navbar() {
           <Link to="/catalogue" onClick={() => setMobileOpen(false)}>Catalogue</Link>
           <Link to="/producers" onClick={() => setMobileOpen(false)}>Producers</Link>
           <Link to="/about" onClick={() => setMobileOpen(false)}>About</Link>
+          <Link to="/find-us" onClick={() => setMobileOpen(false)}>Find Us</Link>
           {user && <Link to={dashLink} onClick={() => setMobileOpen(false)}>Dashboard</Link>}
           {user
             ? <button onClick={handleLogout}>Sign out</button>

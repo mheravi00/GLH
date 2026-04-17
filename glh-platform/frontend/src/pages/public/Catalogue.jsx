@@ -13,14 +13,13 @@ const CATEGORIES = [
   'Fish & Meat',
 ]
 
-const ALLERGENS = [
-  { name: 'Nuts',   emoji: '🌰' },
-  { name: 'Gluten', emoji: '🌾' },
-  { name: 'Dairy',  emoji: '🥛' },
-  { name: 'Eggs',   emoji: '🥚' },
-  { name: 'Fish',   emoji: '🐟' },
-  { name: 'Soya',   emoji: '🫘' },
-]
+const ALLERGEN_EMOJI = {
+  nuts:    '🌰', gluten: '🌾', dairy: '🥛',
+  eggs:    '🥚', fish:   '🐟', soya:  '🫘',
+  celery:  '🌿', mustard:'🟡', sesame:'🫙',
+  sulphur: '🍷', lupin:  '🌾', molluscs:'🦪',
+  crustaceans: '🦐',
+}
 
 const MAX_PRICE = 30
 
@@ -35,6 +34,7 @@ const SORT_OPTIONS = [
 
 export default function Catalogue() {
   const [products, setProducts]            = useState([])
+  const [allergenList, setAllergenList]    = useState([])
   const [loading, setLoading]              = useState(true)
   const [selectedCategories, setCategories] = useState([])
   const [excludeAllergens, setExclude]      = useState([])
@@ -50,21 +50,19 @@ export default function Catalogue() {
   useEffect(() => {
     let active = true
 
-    api.get('/products')
-      .then(res => {
+    Promise.all([api.get('/products'), api.get('/allergens')])
+      .then(([prodRes, allergenRes]) => {
         if (!active) return
-        const rows = Array.isArray(res.data) ? res.data : []
-        setProducts(rows)
+        setProducts(Array.isArray(prodRes.data) ? prodRes.data : [])
+        setAllergenList(Array.isArray(allergenRes.data) ? allergenRes.data : [])
         setLoadError('')
       })
       .catch(() => {
         if (!active) return
         setProducts([])
-        setLoadError('Could not load catalogue from backend. Make sure backend is running on port 5000.')
+        setLoadError('Could not load catalogue. Please ensure the backend is running.')
       })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
+      .finally(() => { if (active) setLoading(false) })
 
     return () => { active = false }
   }, [])
@@ -114,8 +112,8 @@ export default function Catalogue() {
   const chips = [
     ...selectedCategories.map(c => ({ key: `cat-${c}`, label: c, onRemove: () => toggleCategory(c) })),
     ...excludeAllergens.map(a => {
-      const al = ALLERGENS.find(x => x.name === a)
-      return { key: `al-${a}`, label: `Exclude ${a}`, emoji: al?.emoji, onRemove: () => toggleAllergen(a) }
+      const emoji = ALLERGEN_EMOJI[a.toLowerCase()] || '⚠️'
+      return { key: `al-${a}`, label: `Exclude ${a}`, emoji, onRemove: () => toggleAllergen(a) }
     }),
     ...(inStockOnly  ? [{ key: 'stock', label: 'In Stock',        onRemove: () => setInStock(false) }] : []),
     ...(maxPrice < MAX_PRICE ? [{ key: 'price', label: `Up to £${maxPrice}`, onRemove: () => setMaxPrice(MAX_PRICE) }] : []),
@@ -139,17 +137,26 @@ export default function Catalogue() {
 
       <div className={styles.filterSection}>
         <h3 className={styles.filterHeading}>Exclude Allergens</h3>
-        <ul className={styles.filterList} role="list">
-          {ALLERGENS.map(a => (
-            <li key={a.name}>
-              <label className={styles.checkLabel}>
-                <input type="checkbox" checked={excludeAllergens.includes(a.name)} onChange={() => toggleAllergen(a.name)} className={styles.checkbox} />
-                <span aria-hidden="true">{a.emoji}</span> {a.name}
-              </label>
-            </li>
-          ))}
-        </ul>
-        <p className={styles.filterHint}>Tick allergens to exclude. Products containing these will be hidden.</p>
+        {allergenList.length === 0 ? (
+          <p className={styles.filterHint}>No allergens configured.</p>
+        ) : (
+          <ul className={styles.filterList} role="list">
+            {allergenList.map(a => (
+              <li key={a.allergen_id}>
+                <label className={styles.checkLabel}>
+                  <input
+                    type="checkbox"
+                    checked={excludeAllergens.includes(a.name)}
+                    onChange={() => toggleAllergen(a.name)}
+                    className={styles.checkbox}
+                  />
+                  <span aria-hidden="true">{ALLERGEN_EMOJI[a.name.toLowerCase()] || '⚠️'}</span> {a.name}
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className={styles.filterHint}>Tick allergens to exclude unsafe products.</p>
       </div>
 
       <div className={styles.filterSection}>

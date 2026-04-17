@@ -25,7 +25,7 @@ const BLANK_PRODUCT = {
   low_stock_threshold:'5', batch_number:'', ingredients:'', category_name:'', image_url:'', is_active:1, allergens: [],
 }
 
-const ALLERGEN_OPTIONS = ['Nuts', 'Gluten', 'Dairy', 'Eggs', 'Fish', 'Soya']
+const DEFAULT_ALLERGEN_OPTIONS = ['Nuts', 'Gluten', 'Dairy', 'Eggs', 'Fish', 'Soya']
 
 function stockBadge(qty, threshold) {
   if (qty === 0)        return <span className="badge badge-red">Out of stock</span>
@@ -76,7 +76,7 @@ function BarChartCSS({ data, valueKey, labelKey, color = 'var(--clr-primary)' })
   )
 }
 
-function ProductModal({ product, onClose, onSave }) {
+function ProductModal({ product, onClose, onSave, allergenOptions }) {
   const [form, setForm]   = useState(product
     ? {
       ...product,
@@ -154,7 +154,26 @@ function ProductModal({ product, onClose, onSave }) {
           {f('name',        'Product name', 'text', 'e.g. Heritage Tomatoes')}
           {f('unit',        'Unit',         'text', 'e.g. 500g, jar, loaf')}
           {f('price',       'Price (£)',    'number', '0.00')}
-          {f('category_name', 'Category',  'text', 'e.g. Vegetables')}
+          <div className="form-group">
+            <label className="form-label" htmlFor="pm-category_name">Category *</label>
+            <select
+              id="pm-category_name"
+              className={`form-input${errors.category_name ? ' error' : ''}`}
+              value={form.category_name}
+              required
+              onChange={e => setForm(p => ({ ...p, category_name: e.target.value }))}
+              aria-invalid={!!errors.category_name}
+            >
+              <option value="">Select a category…</option>
+              <option>Honey &amp; Preserves</option>
+              <option>Dairy &amp; Eggs</option>
+              <option>Vegetables</option>
+              <option>Bread &amp; Bakes</option>
+              <option>Drinks</option>
+              <option>Fish &amp; Meat</option>
+            </select>
+            {errors.category_name && <span className="form-error" role="alert">{errors.category_name}</span>}
+          </div>
           {f('batch_number', 'Batch number', 'text', 'e.g. BT-001')}
           {f('image_url', 'Image URL', 'url', 'https://...')}
           {f('stock_quantity', 'Stock quantity', 'number', '0')}
@@ -177,7 +196,7 @@ function ProductModal({ product, onClose, onSave }) {
         <fieldset className={styles.allergenFieldset}>
           <legend className="form-label">Declared Allergens</legend>
           <div className={styles.allergenGrid}>
-            {ALLERGEN_OPTIONS.map((name) => {
+            {allergenOptions.map((name) => {
               const checked = form.allergens.includes(name)
               return (
                 <label key={name} className={styles.allergenOption}>
@@ -195,6 +214,11 @@ function ProductModal({ product, onClose, onSave }) {
                 </label>
               )
             })}
+            {allergenOptions.length === 0 && (
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--clr-neutral-500)' }}>
+                No allergens configured. Ask your admin to add allergens.
+              </span>
+            )}
           </div>
         </fieldset>
 
@@ -235,14 +259,15 @@ export default function ProducerDashboard() {
   const { logout } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
-  const [tab,       setTab]      = useState('overview')
-  const [products,  setProducts] = useState(SEED_PRODUCTS)
-  const [orders, setOrders]      = useState(SEED_ORDERS)
-  const [analytics, setAnalytics]= useState(SEED_ANALYTICS)
-  const [modal,     setModal]    = useState(null)   // null | 'add' | product object
-  const [stockEdit, setStockEdit]= useState(null)   // { id, value }
-  const [search,    setSearch]   = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState(null) // product_id
+  const [tab,          setTab]      = useState('overview')
+  const [products,     setProducts] = useState(SEED_PRODUCTS)
+  const [orders,       setOrders]   = useState(SEED_ORDERS)
+  const [analytics,    setAnalytics]= useState(SEED_ANALYTICS)
+  const [allergenOptions, setAllergenOptions] = useState(DEFAULT_ALLERGEN_OPTIONS)
+  const [modal,        setModal]    = useState(null)
+  const [stockEdit,    setStockEdit]= useState(null)
+  const [search,       setSearch]   = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const refreshProducts = useCallback(async () => {
     const res = await api.get('/products/mine')
@@ -263,6 +288,12 @@ export default function ProducerDashboard() {
     refreshProducts().catch(() => {})
     refreshAnalytics().catch(() => {})
     refreshOrders().catch(() => {})
+    api.get('/allergens')
+      .then(res => {
+        const names = Array.isArray(res.data) ? res.data.map(a => a.name) : []
+        if (names.length > 0) setAllergenOptions(names)
+      })
+      .catch(() => {})
   }, [refreshProducts, refreshAnalytics, refreshOrders])
 
   const lowStockItems = products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold)
@@ -687,6 +718,7 @@ export default function ProducerDashboard() {
           product={modal === 'add' ? null : modal}
           onClose={() => setModal(null)}
           onSave={handleSave}
+          allergenOptions={allergenOptions}
         />
       )}
     </main>

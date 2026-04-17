@@ -148,6 +148,7 @@
 @media (max-width: 640px) {
   .nav { display: none; }
   .greeting { display: none; }
+  .btnRegister { display: none; }
   .hamburger { display: flex; }
   .header { position: sticky; }
 }

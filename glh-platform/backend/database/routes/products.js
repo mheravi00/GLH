@@ -4,7 +4,7 @@ const db = require('../db')
 const { requireAuth, requireRole } = require('../middleware/auth')
 
 const isProducer = [requireAuth, requireRole('producer')]
-const KNOWN_ALLERGENS = ['nuts', 'gluten', 'dairy', 'eggs', 'fish', 'soya']
+const isAdmin = [requireAuth, requireRole('admin')]
 
 async function resolveCategoryId(categoryId, categoryName) {
   if (categoryId) return categoryId
@@ -20,14 +20,11 @@ async function resolveCategoryId(categoryId, categoryName) {
 
 function normalizeAllergenNames(input) {
   if (!input) return []
-
   const values = Array.isArray(input) ? input : String(input).split(',')
   const cleaned = values
     .map(v => String(v || '').trim().toLowerCase())
-    .filter(Boolean)
-
-  const deduped = Array.from(new Set(cleaned))
-  return deduped.filter(name => KNOWN_ALLERGENS.includes(name))
+    .filter(v => v.length > 0 && v.length <= 50)
+  return Array.from(new Set(cleaned))
 }
 
 async function syncProductAllergens(productId, allergenNames) {
@@ -68,7 +65,7 @@ router.get('/producers', async (_req, res) => {
   try {
     const rows = await db.allAsync(
       `SELECT pr.producer_id, pr.user_id, pr.farm_name, pr.description, pr.location,
-              pr.contact_email, pr.contact_phone,
+              pr.contact_email, pr.contact_phone, pr.logo_url,
               COUNT(DISTINCT p.product_id) AS product_count
        FROM producers pr
        LEFT JOIN products p ON pr.producer_id = p.producer_id AND p.is_active = 1
@@ -240,6 +237,89 @@ router.delete('/:id', ...isProducer, async (req, res) => {
     res.json({ message: 'Product deleted' })
   } catch (err) {
     console.error('DELETE /:id error:', err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.get('/admin/all', ...isAdmin, async (_req, res) => {
+  try {
+    const rows = await db.allAsync(
+      `SELECT p.*, c.name AS category_name, pr.farm_name,
+              GROUP_CONCAT(a.name) AS allergens
+       FROM products p
+       JOIN producers pr ON p.producer_id = pr.producer_id
+       LEFT JOIN categories c ON p.category_id = c.category_id
+       LEFT JOIN product_allergens pa ON p.product_id = pa.product_id
+       LEFT JOIN allergens a ON pa.allergen_id = a.allergen_id
+       GROUP BY p.product_id
+       ORDER BY p.created_at DESC`
+    )
+    res.json(rows.map(r => ({ ...r, allergens: formatAllergens(r.allergens) })))
+  } catch (err) {
+    console.error('GET /admin/all error:', err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.put('/admin/:id', ...isAdmin, async (req, res) => {
+  try {
+    const product = await db.getAsync('SELECT product_id FROM products WHERE product_id = ?', [req.params.id])
+    if (!product) return res.status(404).json({ error: 'Product not found' })
+
+    const { name, description, price, unit, low_stock_threshold, stock_quantity,
+            batch_number, ingredients, category_id, category_name, image_url, is_active, allergens } = req.body
+
+    if (!name?.trim() || !price || !unit?.trim() || !batch_number?.trim() || !ingredients?.trim()) {
+      return res.status(400).json({ error: 'name, price, unit, batch_number and ingredients are required' })
+    }
+    if (Number(price) <= 0) return res.status(400).json({ error: 'Price must be greater than 0' })
+
+    const resolvedCategoryId = await resolveCategoryId(category_id, category_name)
+
+    await db.runAsync(
+      `UPDATE products SET name=?, description=?, price=?, unit=?, stock_quantity=?,
+        low_stock_threshold=?, batch_number=?, ingredients=?, image_url=?, category_id=?, is_active=?
+       WHERE product_id = ?`,
+      [
+        name.trim(), description?.trim() || '', Number(price), unit.trim(),
+        Number(stock_quantity) || 0, Number(low_stock_threshold) || 5,
+        batch_number.trim(), ingredients.trim(), image_url?.trim() || null,
+        resolvedCategoryId, is_active !== undefined ? (is_active ? 1 : 0) : 1,
+        req.params.id,
+      ]
+    )
+    await syncProductAllergens(req.params.id, normalizeAllergenNames(allergens))
+    res.json({ message: 'Product updated' })
+  } catch (err) {
+    console.error('PUT /admin/:id error:', err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.patch('/admin/:id/toggle', ...isAdmin, async (req, res) => {
+  try {
+    const product = await db.getAsync(
+      'SELECT product_id, is_active FROM products WHERE product_id = ?', [req.params.id]
+    )
+    if (!product) return res.status(404).json({ error: 'Product not found' })
+    const next = product.is_active ? 0 : 1
+    await db.runAsync('UPDATE products SET is_active = ? WHERE product_id = ?', [next, req.params.id])
+    res.json({ message: next ? 'Product activated' : 'Product deactivated', is_active: next })
+  } catch (err) {
+    console.error('PATCH /admin/:id/toggle error:', err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.delete('/admin/:id', ...isAdmin, async (req, res) => {
+  try {
+    const product = await db.getAsync('SELECT product_id FROM products WHERE product_id = ?', [req.params.id])
+    if (!product) return res.status(404).json({ error: 'Product not found' })
+    await db.runAsync('DELETE FROM product_allergens WHERE product_id = ?', [req.params.id])
+    await db.runAsync('DELETE FROM products WHERE product_id = ?', [req.params.id])
+    res.json({ message: 'Product deleted' })
+  } catch (err) {
+    console.error('DELETE /admin/:id error:', err)
     res.status(500).json({ error: 'Server error' })
   }
 })

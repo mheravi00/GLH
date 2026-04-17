@@ -43,7 +43,7 @@ function validatePassword(password) {
 async function getAccountRow(userId) {
   return db.getAsync(
     `SELECT u.user_id, u.email, u.first_name, u.last_name, u.phone_number, u.role, u.is_active, u.created_at,
-            p.producer_id, p.farm_name, p.description, p.location, p.contact_email, p.contact_phone
+            p.producer_id, p.farm_name, p.description, p.location, p.contact_email, p.contact_phone, p.logo_url
      FROM users u
      LEFT JOIN producers p ON p.user_id = u.user_id
      WHERE u.user_id = ?`,
@@ -72,6 +72,7 @@ function formatAccount(row) {
           location: row.location || '',
           contact_email: row.contact_email || '',
           contact_phone: row.contact_phone || '',
+          logo_url: row.logo_url || '',
         }
       : null,
   }
@@ -268,7 +269,7 @@ router.patch('/me', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Account not found' })
     }
 
-    let { first_name, last_name, email, phone_number, farm_name, description, location, contact_email, contact_phone } = req.body
+    let { first_name, last_name, email, phone_number, farm_name, description, location, contact_email, contact_phone, logo_url } = req.body
     first_name = normalizeText(first_name)
     last_name = normalizeText(last_name)
     email = normalizeEmail(email)
@@ -278,6 +279,7 @@ router.patch('/me', requireAuth, async (req, res) => {
     location = normalizeText(location)
     contact_email = normalizeEmail(contact_email)
     contact_phone = normalizePhone(contact_phone)
+    logo_url = normalizeText(logo_url)
 
     if (!first_name || !last_name || !email) {
       return res.status(400).json({ error: 'first_name, last_name and email are required' })
@@ -314,9 +316,9 @@ router.patch('/me', requireAuth, async (req, res) => {
       }
       await db.runAsync(
         `UPDATE producers
-         SET farm_name = ?, description = ?, location = ?, contact_email = ?, contact_phone = ?
+         SET farm_name = ?, description = ?, location = ?, contact_email = ?, contact_phone = ?, logo_url = ?
          WHERE user_id = ?`,
-        [farm_name, description || '', location || '', contact_email || email, contact_phone || phone_number, req.user.userId]
+        [farm_name, description || '', location || '', contact_email || email, contact_phone || phone_number, logo_url || null, req.user.userId]
       )
     }
 
@@ -500,7 +502,7 @@ router.patch('/manage/accounts/:id', requireAuth, requireRole('admin'), async (r
       return res.status(404).json({ error: 'Account not found' })
     }
 
-    let { first_name, last_name, email, phone_number, farm_name, description, location, contact_email, contact_phone } = req.body
+    let { first_name, last_name, email, phone_number, farm_name, description, location, contact_email, contact_phone, logo_url } = req.body
     first_name = normalizeText(first_name)
     last_name = normalizeText(last_name)
     email = normalizeEmail(email)
@@ -510,6 +512,7 @@ router.patch('/manage/accounts/:id', requireAuth, requireRole('admin'), async (r
     location = normalizeText(location)
     contact_email = normalizeEmail(contact_email)
     contact_phone = normalizePhone(contact_phone)
+    logo_url = normalizeText(logo_url)
 
     if (!first_name || !last_name || !email) {
       return res.status(400).json({ error: 'first_name, last_name and email are required' })
@@ -543,9 +546,9 @@ router.patch('/manage/accounts/:id', requireAuth, requireRole('admin'), async (r
       }
       await db.runAsync(
         `UPDATE producers
-         SET farm_name = ?, description = ?, location = ?, contact_email = ?, contact_phone = ?
+         SET farm_name = ?, description = ?, location = ?, contact_email = ?, contact_phone = ?, logo_url = ?
          WHERE user_id = ?`,
-        [farm_name, description || '', location || '', contact_email || email, contact_phone || phone_number, userId]
+        [farm_name, description || '', location || '', contact_email || email, contact_phone || phone_number, logo_url || null, userId]
       )
     }
 

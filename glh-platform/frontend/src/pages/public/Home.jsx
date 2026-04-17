@@ -16,13 +16,6 @@ const FEATURES = [
   },
 ]
 
-const PRODUCERS = [
-  { emoji: '🌿', name: 'Meadow Farm',      category: 'Honey & Preserves' },
-  { emoji: '🐄', name: 'Hill Top Dairy',   category: 'Cheese & Milk' },
-  { emoji: '🥦', name: 'River Bend Veg',   category: 'Seasonal Vegetables' },
-  { emoji: '🍞', name: 'Oak Wood Bakes',   category: 'Bread & Pastries' },
-]
-
 export default function Home() {
   return (
     <main>
@@ -68,20 +61,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={styles.producers} aria-labelledby="producers-heading">
-        <div className="container">
-          <h2 id="producers-heading" className={styles.sectionTitle}>Meet Our Producers</h2>
-          <ul className={styles.producerGrid} role="list">
-            {PRODUCERS.map(p => (
-              <li key={p.name} className={styles.producerCard}>
-                <div className={styles.producerAvatar}>{p.emoji}</div>
-                <strong>{p.name}</strong>
-                <span>{p.category}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
     </main>
   )
 }

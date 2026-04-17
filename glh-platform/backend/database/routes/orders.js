@@ -3,7 +3,7 @@ const router = express.Router()
 const db = require('../db')
 const { requireAuth, requireRole } = require('../middleware/auth')
 
-const DELIVERY_FEE = 3.5
+const DELIVERY_FEE = 5.0
 const VALID_ORDER_TYPES = new Set(['collection', 'delivery'])
 const VALID_ORDER_STATUSES = new Set(['placed', 'confirmed', 'ready', 'collected', 'delivered', 'cancelled'])
 
@@ -66,7 +66,7 @@ router.get('/', requireAuth, async (req, res) => {
 router.post('/', requireAuth, async (req, res) => {
   try {
     const userId = req.user.userId
-    const { items, order_type } = req.body
+    const { items, order_type, contact_phone, contact_email, collection_time, notes } = req.body
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Order must contain at least one item' })
@@ -134,9 +134,11 @@ router.post('/', requireAuth, async (req, res) => {
     const orderRef = `GLH-${Date.now().toString(36).toUpperCase()}`
     const orderResult = await db.runAsync(
       `INSERT INTO orders
-         (order_ref, customer_id, order_type, status, subtotal, delivery_fee, loyalty_discount, total_amount)
-       VALUES (?, ?, ?, 'placed', ?, ?, ?, ?)`,
-      [orderRef, userId, order_type, subtotal, deliveryFee, loyaltyDiscount, total]
+         (order_ref, customer_id, order_type, status, subtotal, delivery_fee, loyalty_discount, total_amount,
+          contact_phone, contact_email, collection_time, notes)
+       VALUES (?, ?, ?, 'placed', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [orderRef, userId, order_type, subtotal, deliveryFee, loyaltyDiscount, total,
+       contact_phone || null, contact_email || null, collection_time || null, notes || null]
     )
 
     const orderId = orderResult.lastInsertRowid

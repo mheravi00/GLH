@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Leaf, Truck, Shield, Users } from 'lucide-react'
-import styles from './Home.module.css'
+import styles from './About.module.css'
 
 const VALUES = [
   { icon: <Leaf size={24} aria-hidden="true" />, title: 'Locally Sourced', text: 'Every product comes from farms and producers within 50 miles.' },
@@ -37,7 +37,7 @@ export default function About() {
             </p>
 
             <h2 style={{ marginBottom: 'var(--sp-4)' }}>What We Stand For</h2>
-            <ul role="list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--sp-6)', listStyle: 'none', marginBottom: 'var(--sp-8)' }}>
+            <ul role="list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: 'var(--sp-6)', listStyle: 'none', marginBottom: 'var(--sp-8)' }}>
               {VALUES.map(v => (
                 <li key={v.title} style={{ background: 'var(--clr-white)', padding: 'var(--sp-6)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ color: 'var(--clr-primary)', marginBottom: 'var(--sp-2)' }}>{v.icon}</div>
@@ -55,7 +55,7 @@ export default function About() {
               <li><strong>Trace</strong> — Every product carries a batch number for full traceability.</li>
             </ol>
 
-            <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+            <div className={styles.ctaRow}>
               <Link to="/catalogue" className="btn btn-primary">Browse the Catalogue</Link>
               <Link to="/producers" className="btn btn-outline">Meet Our Producers</Link>
             </div>

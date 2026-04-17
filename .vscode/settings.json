@@ -1,3 +1,9 @@
 {
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /workspaces/GLH/glh-platform/backend && node server\\.js 2>&1 \\| head -50$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

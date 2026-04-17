@@ -108,7 +108,12 @@ export default function Producers() {
             {filtered.map(p => (
               <li key={p.producer_id} className={`card ${styles.card}`}>
                 <div className={styles.cardTop}>
-                  <div className={styles.avatar}>🌿</div>
+                  <div className={styles.avatar}>
+                    {p.logo_url
+                      ? <img src={p.logo_url} alt={`${p.farm_name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                      : '🌿'
+                    }
+                  </div>
                   <div className={styles.meta}>
                     <h2 className={styles.producerName}>{p.farm_name}</h2>
                   </div>

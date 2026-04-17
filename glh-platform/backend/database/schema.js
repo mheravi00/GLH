@@ -100,6 +100,11 @@ async function init() {
   await ensureColumn('users', 'phone_number', 'TEXT')
   await ensureColumn('producers', 'contact_email', 'TEXT')
   await ensureColumn('producers', 'contact_phone', 'TEXT')
+  await ensureColumn('orders', 'contact_phone', 'TEXT')
+  await ensureColumn('orders', 'contact_email', 'TEXT')
+  await ensureColumn('orders', 'collection_time', 'TEXT')
+  await ensureColumn('orders', 'notes', 'TEXT')
+  await ensureColumn('producers', 'logo_url', 'TEXT')
 
   // Seed default admin account
   const adminExists = await db.getAsync('SELECT user_id FROM users WHERE email = ?', ['admin@glh.local'])
