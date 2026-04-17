@@ -19,7 +19,8 @@
 }
 
 .banner {
-  background: #fff;
+  background: #ffffff;
+  color: #212121;
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0,0,0,.18);
   padding: var(--sp-6);
@@ -36,12 +37,12 @@
   font-size: var(--text-lg);
   font-weight: 700;
   margin-bottom: var(--sp-3);
-  color: var(--clr-neutral-900);
+  color: inherit;
 }
 
 .text {
   font-size: var(--text-sm);
-  color: var(--clr-neutral-600);
+  color: #4f4f4f;
   line-height: 1.65;
 }
 
