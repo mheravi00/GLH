@@ -125,6 +125,8 @@ async function deleteUserData(userId) {
 
 router.post('/register', async (req, res) => {
   try {
+    await db.execAsync('BEGIN TRANSACTION')
+
     let {
       email,
       password,
@@ -151,39 +153,49 @@ router.post('/register', async (req, res) => {
     contact_phone = normalizePhone(contact_phone)
 
     if (!email || !password || !first_name || !last_name) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'All fields are required' })
     }
     if (first_name.length > 50 || last_name.length > 50 || email.length > 100) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Input too long' })
     }
     if (!emailRegex.test(email)) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Invalid email format' })
     }
     if (phone_number && !phoneRegex.test(phone_number)) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Invalid phone number format' })
     }
 
     const passwordError = validatePassword(password)
     if (passwordError) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: passwordError })
     }
 
     const assignedRole = role === 'producer' ? 'producer' : 'customer'
     if (assignedRole === 'producer' && !farm_name) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Farm name is required for producer accounts' })
     }
     if (assignedRole === 'producer' && farm_name.length > 100) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Farm name too long' })
     }
     if (contact_email && !emailRegex.test(contact_email)) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Invalid producer contact email format' })
     }
     if (contact_phone && !phoneRegex.test(contact_phone)) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'Invalid producer contact phone format' })
     }
 
     const existing = await db.getAsync('SELECT user_id FROM users WHERE email = ?', [email])
     if (existing) {
+      await db.execAsync('ROLLBACK')
       return res.status(400).json({ error: 'An account already exists with this email' })
     }
 
@@ -206,10 +218,15 @@ router.post('/register', async (req, res) => {
       await db.runAsync('INSERT INTO loyalty_accounts (user_id) VALUES (?)', [userId])
     }
 
+    await db.execAsync('COMMIT')
     res.status(201).json({ message: 'Account created successfully' })
   } catch (err) {
+    await db.execAsync('ROLLBACK').catch(() => {})
     console.error('Register error:', err)
-    res.status(500).json({ error: 'Server error. Please try again.' })
+    if (err.code === 'SQLITE_CONSTRAINT' && err.message.includes('users.email')) {
+      return res.status(400).json({ error: 'An account already exists with this email' })
+    }
+    return res.status(500).json({ error: 'Server error. Please try again.' })
   }
 })
 

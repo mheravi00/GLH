@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth }  from '../../context/useAuth'
 import { useToast } from '../../context/useToast'
@@ -14,6 +14,9 @@ export default function Login() {
   const { login }    = useAuth()
   const { addToast } = useToast()
   const navigate     = useNavigate()
+  const [searchParams] = useSearchParams()
+  const loginRole = searchParams.get('role')
+  const isAdminLogin = loginRole === 'admin'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -25,6 +28,10 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await api.post('/auth/login', form)
+      if (isAdminLogin && res.data.role !== 'admin') {
+        setError('Only administrator accounts may sign in from this form.')
+        return
+      }
       login(res.data.token, res.data.name)
       addToast(`Welcome back, ${res.data.name}!`)
       const role = res.data.role

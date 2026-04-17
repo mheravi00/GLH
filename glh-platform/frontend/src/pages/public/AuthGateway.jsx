@@ -29,7 +29,7 @@ const OPTIONS = [
     icon: <Shield size={20} aria-hidden="true" />,
     description: 'Access administrative tools and manage the platform.',
     actions: [
-      { label: 'Admin Login', to: '/login', variant: 'primary' },
+      { label: 'Admin Login', to: '/login?role=admin', variant: 'primary' },
       { label: 'Admin Sign up', to: '/register/admin', variant: 'outline' },
     ],
   },

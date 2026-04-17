@@ -46,7 +46,7 @@ export default function RegisterProducer() {
       navigate('/producer')
     } catch (err) {
       const submitError = err.response?.data?.error
-        || (err.request ? 'Cannot reach server. Start the backend on port 5000 and try again.' : 'Registration failed. Please try again.')
+        || (err.request ? 'Cannot reach server. Please ensure the backend is running.' : 'Registration failed. Please try again.')
       setErrors({ submit: submitError })
     } finally {
       setLoading(false)

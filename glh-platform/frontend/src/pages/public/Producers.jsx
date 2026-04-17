@@ -21,7 +21,7 @@ export default function Producers() {
       .catch(() => {
         if (active) {
           setProducers([])
-          setError('Could not load producers from backend.')
+          setError('could not find producers')
         }
       })
       .finally(() => {

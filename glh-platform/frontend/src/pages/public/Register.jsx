@@ -34,6 +34,7 @@ export default function Register() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (loading) return
     if (!validate()) return
     setLoading(true)
     try {
